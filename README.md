@@ -1,4 +1,4 @@
-# ALI — AL Interpreter for Business Central
+# AL Interpreter for Business Central (ALI)
 
 Write, check and run AL code **directly inside Business Central** — no VS Code, no publishing, no deployment. ALI is a complete AL compiler and interpreter written in pure AL: no .NET assembly, no DLL, no external service. It installs like any other extension.
 
@@ -23,25 +23,26 @@ Typical uses:
 
 <!-- SCREENSHOT 1: full editor page — code with syntax coloring on the left, Result pane with a successful run on the right. Best "hero" image, keep it wide. -->
 
-The **AL Script Editor** page brings a VS Code-like experience into the Business Central web client. Type AL, press **F5**, read the result. Ctrl+F5 forces a recompile, Ctrl+S saves.
+The **AL Script Editor** page brings a VS Code-like experience into the Business Central web client. 
+Type AL, press **F5**, read the result. 
+Ctrl+F5 forces a recompile,
+Ctrl+S saves
 
 ### Live syntax check
 
 <!-- SCREENSHOT 2: a script with 2–3 errors underlined, Problems panel open below showing the messages (one with a "did you mean" hint). -->
 
-Code is checked **as you type**. Errors are underlined in place and listed in the **Problems** panel. These are real semantic checks against your database — unknown tables, fields or procedures, wrong argument types, invalid `var` arguments — not just keyword coloring.
-
-- Syntax coloring, auto-indent, completion and hover help for keywords, built-in functions, tables, fields, codeunit procedures and enums
-- "Did you mean" suggestions on misspelled names
-- Result lines are clickable and jump to the source location
+Code is checked **as you type**. 
+Errors are underlined in place and listed in the **Problems** panel. 
+Real semantic checks against your database — unknown tables, fields or procedures, wrong argument types, invalid `var` arguments — not just keyword coloring.
 
 <!-- SCREENSHOT 3 (optional): completion popup open on `Customer.` showing fields, or hover tooltip on a procedure. -->
 
 ### Multi-tab
 
-<!-- SCREENSHOT 4: tab strip with 2–3 open scripts, one being renamed inline. -->
+Several scripts can be open at once in tabs. New tab are scratch buffer; once you give it a name (click on tab name to edit) it becomes a stored script and is auto-saved. Stored scripts reopen from the script list.
 
-Several scripts can be open at once in tabs. A new tab is a scratch buffer; once you give it a name (inline rename) it becomes a stored script and is auto-saved. Stored scripts reopen from the script list.
+<!-- SCREENSHOT 4: tab strip with 2–3 open scripts, one being renamed inline. -->
 
 ### Compile & run options
 
@@ -72,20 +73,22 @@ The **Preprocessor** toolbar button opens a page where you declare these symbols
 
 ### AI friendly
 
-ALI was built to be driven by an AI assistant as much as by a human:
+Built to be driven by an AI small model with secure and comprhensive output
 
-- **Safe by default** — Simulation mode, record security filters and the HTTP and protected-write gates let an AI agent run code on real data without side effects.
+- **Safe by default** — Simulation mode : let an AI agent run code on real data without side effects. Tunable option to allow httprequest, additional record security filtering (eg user responsibility center) ect. The interpreter herit user permision anyway.
 - **Errors built for self-correction** — all errors are reported at once, with source line, caret, hint and "did you mean". Common C#/JavaScript slips (`==`, `&&`, `"text"`, `;` before `else`, `String`/`int`) get their AL spelling in the hint.
 - **Warnings for classic mistakes** — e.g. reading a FlowField without `CalcFields`.
-- **Callable from AL** — a small public API ([section 3](#3-calling-ali-from-al)) lets any AL code, an AI tool included, compile and run a script and read back messages, return value and errors as text or JSON.
+- **Callable from AL** — public API ([section 3](#3-calling-ali-from-al)) lets you run the interpreter with your own extension, you can publish  endpoint calling AL-Interpreter to compile and run a script and read back messages, return value and errors as text or JSON.
 
 ### Performance
 
-> ⚠️ **Slower than native AL — expect about 11× the run time** on typical business logic (loops, sub procedures, text and collection work). Use ALI for ad-hoc scripts, data fixes, investigations and AI-generated code, not as a replacement for compiled extensions.
+> ⚠️ **Slower than native AL — expect ~10× the run time** on typical business logic (loops, sub procedures, text and collection work). Use it for ad-hoc scripts, data fixes, investigations and AI-generated code, not as a replacement for compiled extensions.
 
-Why: the interpreter itself is written in AL, so each script statement costs several AL statements. Database work is not slowed down — reads, writes, filters and table triggers are executed by the platform exactly as in native code. The overhead sits on the surrounding logic: SQL-heavy scripts (a few large `FindSet` / `ModifyAll`) come much closer to native speed than tight in-memory loops.
+Why: the interpreter itself is written in AL, each statement costs several real AL statements. Database work is not slowed down — reads/writes/filters/table triggers runned natively and respect user permission. The overhead sits on the surrounding logic, SQL-heavy scripts (a few large `FindSet` / `ModifyAll`) would come much closer to native speed.
 
-The **Benchmark** action on the options page measures this on your own data: the same workload (customer reads, text, char arithmetic, decimal, date, list, dictionary, sub procedure calls) runs as native AL and through ALI, both returning a checksum that must match. Compile time is reported separately.
+The **Benchmark** action on the options page measures this on your own data using customer table : the same workload (record read, text, char arithmetic, decimal, date, list, dictionary, sub procedure calls) runs as native AL and through ALI, both returning a checksum that match.
+
+Sample :
 
 | Customers | Native AL | ALI | ALI compile | Ratio |
 |---|---|---|---|---|
@@ -96,10 +99,10 @@ The **Benchmark** action on the options page measures this on your own data: the
 
 ## 2. Supported features
 
-ALI follows the native AL compiler (alc.exe) and runtime behavior as closely as possible.
+The interpreter respect native AL compiler (alc.exe) and runtime behavior of Busienss central. It translate written code to bytecode that run native AL statement as much as possible.
 
-- ✅ supported, behaves like native AL
-- 🔶 recognized — compiles, but reports a clear "not implemented yet" error
+- ✅ supported, behaves exactly like native AL
+- 🔶 recognized — compiles, but report "not implemented yet" error
 - ❌ not supported
 
 Reference: [AL data types and methods](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/methods-auto/library).
