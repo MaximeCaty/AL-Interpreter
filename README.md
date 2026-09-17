@@ -1,102 +1,105 @@
-# ALI — AL Live Interpreter for Business Central
+# ALI — AL Interpreter for Business Central
 
-Write, check and run AL code **directly inside Business Central** — no VS Code, no publishing, no extension deployment. Complete AL compiler and interpreter written in pure AL: no .NET assembly, no DLL, no external service.
+Write, check and run AL code **directly inside Business Central** — no VS Code, no publishing, no deployment. ALI is a complete AL compiler and interpreter written in pure AL: no .NET assembly, no DLL, no external service. It installs like any other extension.
 
-NB: most of this app was designed and developed with Anthropic Fable 5.1 and Opus 5.
+Typical uses:
+
+- **Ad-hoc scripts and data fixes** — run a one-off correction on live data, with a simulation mode that rolls everything back.
+- **Investigation** — query tables, call existing codeunits, inspect results without leaving the web client.
+- **AI-generated code** — let an AI assistant write and execute AL safely, with clear error feedback it can correct from.
+
+> Most of this app was designed and developed with Anthropic Claude (Fable 5.1 and Opus 5).
 
 ## Contents
 
 1. [Live code editor](#1-live-code-editor)
 2. [Supported features](#2-supported-features)
-3. [AL usage](#3-al-usage)
+3. [Calling ALI from AL](#3-calling-ali-from-al)
 4. [Architecture](#4-architecture)
 
 ---
 
 ## 1. Live code editor
 
-<!-- screenshot: editor overview -->
+<!-- SCREENSHOT 1: full editor page — code with syntax coloring on the left, Result pane with a successful run on the right. Best "hero" image, keep it wide. -->
 
-**AL Script Editor** page brings VS Code-like editing into the Business Central web client. Type AL, press **F5**, see result.
+The **AL Script Editor** page brings a VS Code-like experience into the Business Central web client. Type AL, press **F5**, read the result. Ctrl+F5 forces a recompile, Ctrl+S saves.
 
 ### Live syntax check
 
-<!-- screenshot: live diagnostics -->
+<!-- SCREENSHOT 2: a script with 2–3 errors underlined, Problems panel open below showing the messages (one with a "did you mean" hint). -->
 
-Code checked **as you type**, errors underlined in place and listed in the **Problems** panel. Real semantic checks against your database — unknown tables, fields, procedures, wrong argument types, invalid `var` arguments — not just keyword coloring.
+Code is checked **as you type**. Errors are underlined in place and listed in the **Problems** panel. These are real semantic checks against your database — unknown tables, fields or procedures, wrong argument types, invalid `var` arguments — not just keyword coloring.
 
-- Syntax coloring, auto-indent, completion and hover for keywords, builtins, tables, fields, codeunit procedures and enums
+- Syntax coloring, auto-indent, completion and hover help for keywords, built-in functions, tables, fields, codeunit procedures and enums
 - "Did you mean" suggestions on misspelled names
-- Clickable result lines jump to source location
+- Result lines are clickable and jump to the source location
+
+<!-- SCREENSHOT 3 (optional): completion popup open on `Customer.` showing fields, or hover tooltip on a procedure. -->
 
 ### Multi-tab
 
-<!-- screenshot: tab strip -->
+<!-- SCREENSHOT 4: tab strip with 2–3 open scripts, one being renamed inline. -->
 
-Several scripts open at once in tabs. New tab = scratch buffer; once named (inline rename), saved as stored script and auto-saved. Stored scripts reopen from script list.
+Several scripts can be open at once in tabs. A new tab is a scratch buffer; once you give it a name (inline rename) it becomes a stored script and is auto-saved. Stored scripts reopen from the script list.
 
 ### Compile & run options
 
-<!-- screenshot: options page -->
+<!-- SCREENSHOT 5: the Options page (Compiler Options + Execution Options groups). -->
 
 | Option | Default | Effect |
 |---|---|---|
-| **Simulation / Normal** (toolbar toggle) | Simulation | Simulation rolls back every database write, even on success — safe on live data. Normal commits. |
-| Verbose | Off | Errors quote source line with caret and plain-language hint |
+| **Simulation / Normal** (toolbar toggle) | Simulation | Simulation rolls back every database write at the end, even on success — safe on live data. Normal commits. |
+| Verbose | Off | Errors quote the source line with a caret and a plain-language hint |
 | Optimize | Off | Precompute constant expressions, drop dead branches |
 | Allow HTTP | Off | Permit outbound `HttpClient` calls |
-| Allow protected table write | Off | Permit writes to posted / ledger tables |
-| Apply record security filters | Off | Script only sees records user is allowed to see |
-| Show record operation counts | Off | List record operations performed by run |
-| Message handler | Log | Log messages in result, or also show them |
-| Confirm / StrMenu handler | Default | Scripted answer (else `false` / `0` + warning), raise error, or show real dialog |
-| Dialog (GuiAllowed) | Show | Real `GuiAllowed`, or always `false` to simulate headless session |
-| Preprocessor symbols | None | Define symbols for `#if` / `#endif` blocks |
+| Allow protected table write | Off | Permit writes to posted documents, ledger entries and registers |
+| Apply record security filters | Off | Script only sees records the user is allowed to see |
+| Show record operation counts | Off | List insert/modify/delete counts per table after the run |
+| Message handler | Log | Collect `Message()` in the result, or also show it as a real dialog |
+| Confirm / StrMenu handler | Default | Scripted answer (otherwise `false` / `0` + warning), raise an error, or show the real dialog |
+| Dialog (GuiAllowed) | Show | Real `GuiAllowed`, or always `false` to simulate a headless session |
 
-Compiled script cached with it: unchanged script re-runs without compiling. **Force run** recompiles after called objects change.
+The compiled script is cached with the stored script: an unchanged script re-runs without compiling. **Force run** (Ctrl+F5) recompiles, which you need after changing an object the script calls.
+
+### Preprocessor symbols
+
+<!-- SCREENSHOT 6: the Preprocessor Symbols page with one extension and a couple of symbols (e.g. CLEAN25). -->
+
+When a script calls a procedure of an existing published object, ALI reads that object's AL source from the database and compiles it on the fly. If that source contains conditional compilation directives (`#if CLEAN25 ... #endif`, `#if not CLEAN24 ...`), ALI must know which symbols were defined when the extension was built. Business Central does not store this information — the `preprocessorSymbols` of the extension's `app.json` are not retrievable at runtime.
+
+The **Preprocessor** toolbar button opens a page where you declare these symbols **per published extension**, once. ALI then compiles that extension's objects exactly as the AL compiler did. Objects of extensions with no entry are compiled with no symbol defined, which is the right answer for most extensions. `#define` / `#undef` inside a file are always honored on top of this set.
 
 ### AI friendly
 
-Built to be driven by LLMs as much as by humans:
+ALI was built to be driven by an AI assistant as much as by a human:
 
-- **Safe by default** — Simulation mode, record security filters, HTTP and protected-write gates let AI agents run code on real data without side effects.
-- **Errors built for self-correction** — all errors reported at once, with source line, caret, hint and "did you mean". Common C#/JavaScript slips (`==`, `&&`, `"text"`, `;` before `else`, `String`/`int`) get their AL spelling in the hint.
-- **Warnings for classic mistakes** — e.g. FlowField read without `CalcFields`.
-- **Callable from AL** — small public API ([AL usage](#3-al-usage)): any AL code, AI tools included, compiles and runs a script and reads back messages, return value and errors as text or JSON.
+- **Safe by default** — Simulation mode, record security filters and the HTTP and protected-write gates let an AI agent run code on real data without side effects.
+- **Errors built for self-correction** — all errors are reported at once, with source line, caret, hint and "did you mean". Common C#/JavaScript slips (`==`, `&&`, `"text"`, `;` before `else`, `String`/`int`) get their AL spelling in the hint.
+- **Warnings for classic mistakes** — e.g. reading a FlowField without `CalcFields`.
+- **Callable from AL** — a small public API ([section 3](#3-calling-ali-from-al)) lets any AL code, an AI tool included, compile and run a script and read back messages, return value and errors as text or JSON.
 
 ### Performance
 
-> ⚠️ **Slower than native AL — expect about 15× run time** on typical business logic (loops, sub procedures, text and collection work). Use for ad-hoc scripts, data fixes, investigations and AI-generated code, not as replacement for compiled extensions.
+> ⚠️ **Slower than native AL — expect about 11× the run time** on typical business logic (loops, sub procedures, text and collection work). Use ALI for ad-hoc scripts, data fixes, investigations and AI-generated code, not as a replacement for compiled extensions.
 
-Why: interpreter itself written in AL, so each script statement costs several AL statements. Database work not slowed — reads, writes, filters and table triggers executed by platform as in native code. Overhead sits on surrounding logic: SQL-heavy scripts (few big `FindSet` / `ModifyAll`) come much closer to native speed than tight in-memory loops.
+Why: the interpreter itself is written in AL, so each script statement costs several AL statements. Database work is not slowed down — reads, writes, filters and table triggers are executed by the platform exactly as in native code. The overhead sits on the surrounding logic: SQL-heavy scripts (a few large `FindSet` / `ModifyAll`) come much closer to native speed than tight in-memory loops.
 
-Script compiled once, everything resolved up front. Since AL procedure calls are expensive, hottest operations are **inlined into main execution loop** — deliberately ugly interpreter code, traded for acceptable speed.
-
-> **Room left for optimization.** Inlining *everything* into execution loop and merging all runtime codeunits (records, text, JSON, XML, HTTP…) into one giant codeunit would bring execution much closer to native speed. Not done on purpose: tens of thousands of lines in one codeunit, unreadable and practically unmaintainable.
-
-**Benchmark** action on options page measures it on your own data: same workload run as native AL and through ALI ([ALIBenchmark.Codeunit.al](ALCodeEditor/ALIBenchmark.Codeunit.al)), both returning a checksum that must match. Per customer, read-only:
-
-- `SetLoadFields` + `FindSet`/`Next` on Customer
-- text: `UpperCase`, `DelChr`, `CopyStr`, concatenation, `StrLen`
-- char arithmetic loop over customer number (`s[i]`)
-- decimal `Round`, date `Date2DMY`, `mod`
-- `Dictionary of [Code, Integer]` count per country, `List of [Text]`
-- three sub procedure calls with by-value parameters
-
-Warm-up pass runs first so neither side pays SQL cache warm-up. Compile time reported separately.
+The **Benchmark** action on the options page measures this on your own data: the same workload (customer reads, text, char arithmetic, decimal, date, list, dictionary, sub procedure calls) runs as native AL and through ALI, both returning a checksum that must match. Compile time is reported separately.
 
 | Customers | Native AL | ALI | ALI compile | Ratio |
 |---|---|---|---|---|
-| 100 000 | 706 ms | 11 113 ms | 16 ms | ×15.7 |
+| 10 000 | 86 ms | 901 ms | 20 ms | ×10.5 |
+| 100 000 | 768 ms | 8 833 ms | 17 ms | ×11.5 |
 
 ---
 
 ## 2. Supported features
 
-Built to match native AL compiler (alc.exe) and runtime behavior as closely as possible.
+ALI follows the native AL compiler (alc.exe) and runtime behavior as closely as possible.
 
 - ✅ supported, behaves like native AL
-- 🔶 recognized — compiles, but reports clear "not implemented yet" error
+- 🔶 recognized — compiles, but reports a clear "not implemented yet" error
 - ❌ not supported
 
 Reference: [AL data types and methods](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/methods-auto/library).
@@ -119,17 +122,17 @@ Reference: [AL data types and methods](https://learn.microsoft.com/en-us/dynamic
 | List of [T], Dictionary of [K,V] | ✅ | |
 | TextBuilder, BigText, SecretText | ✅ | |
 | InStream / OutStream, Blob fields | ✅ | optional `TextEncoding` |
-| HttpClient & Http* family | ✅ | requires *Allow HTTP* |
+| HttpClient & Http* family | ✅ | requires the *Allow HTTP* option (default off) |
 | JsonObject / JsonArray / JsonToken / JsonValue | ✅ | |
 | Xml* (all 16 types) | ✅ | |
 | Dialog | ✅ | |
-| Codeunit variables (`MyCU.Proc()`), `Codeunit.Run` | ✅ | your own codeunits' procedures compiled on the fly; `Codeunit.Run` executes natively |
+| Codeunit variables (`MyCU.Proc()`), `Codeunit.Run` | ✅ | procedures of your own codeunits are compiled on the fly; `Codeunit.Run` executes natively |
 | Table & tableextension procedures (`Rec.MyProc()`) | ✅ | object global variables included |
-| Event publishers / subscribers | ✅ | raising event runs every active subscriber; `IsHandled` pattern works |
+| Event publishers / subscribers | ✅ | raising an event runs every active subscriber; the `IsHandled` pattern works |
 | Native codeunits (Type Helper, Base64 Convert, Math, Encoding, Environment Information, Language, Cryptography Management, Data Compression, Temp Blob, Regex) | ✅ | called natively (§2.10) |
 | Media / MediaSet fields | 🔶 | read ✅, import / insert / remove ❌ |
 | ErrorInfo, File / FileUpload | 🔶 | |
-| DotNet | ❌ | procedures using DotNet blocked; rest of object still works |
+| DotNet | ❌ | procedures using DotNet are blocked; the rest of the object still works |
 | Page, Report, Query, XmlPort, Notification, TestPage variables | ❌ | static `Page.Run` / `Report.Run` ✅ |
 | IsolatedStorage, TaskScheduler, Session, NavApp, ModuleInfo, DataTransfer, FilterPageBuilder, NumberSequence, … | ❌ | |
 
@@ -146,7 +149,8 @@ All ✅:
 - `Commit()`
 - `System.` qualifier
 - Implicit conversions: numeric, `Enum ↔ Option`, `Char → Text`
-- `with` rejected (NoImplicitWith)
+- Preprocessor directives `#if` / `#elif` / `#else` / `#endif`, `#define` / `#undef`
+- `with` rejected (as with `NoImplicitWith`)
 
 ### 2.3 Record methods
 
@@ -156,18 +160,18 @@ All ✅ unless noted:
 
 ❌ `FieldActive`, `FieldNo`, `Relation`, `Consistent`, `SetBaseLoadFields`.
 
-**Record security** (option): every table read restricted to records user is allowed to see; script cannot remove these filters.
+**Record security** (option): every table read is restricted to the records the user is allowed to see; the script cannot remove these filters.
 
 ### 2.4 RecordRef / FieldRef / KeyRef
 
-- **RecordRef** ✅ — `Open` (by id, or by table name as extension), `Close`, `Number`, `Name`, `Caption`, `GetTable`, `SetTable`, `Duplicate`, `Field` (by number or name), `FieldIndex`, `KeyIndex`, `FieldExist`, `System*No`, plus every Record method above and field-number forms (`SetRange`, `SetFilter`, `Validate`, `CalcFields`, `SetLoadFields`, …).
+- **RecordRef** ✅ — `Open` (by id or by table name), `Close`, `Number`, `Name`, `Caption`, `GetTable`, `SetTable`, `Duplicate`, `Field` (by number or name), `FieldIndex`, `KeyIndex`, `FieldExist`, `System*No`, plus every Record method above and the field-number forms (`SetRange`, `SetFilter`, `Validate`, `CalcFields`, `SetLoadFields`, …).
 - **FieldRef** ✅ — `Value` (get/set), `Validate`, `SetRange`, `SetFilter`, `GetFilter`, `GetRangeMin/Max`, `CalcField`, `CalcSum`, `TestField`, `FieldError`, `Name`, `Number`, `Caption`, `Length`, `Active`, `Relation`, `Class`, `Type`, `OptionCaption`, `OptionMembers`, enum helpers, `IsOptimizedForTextSearch`, `Record`. `Value` on Blob / Media fields ❌.
 - **KeyRef** ✅ — `Active`, `FieldCount`, `FieldIndex`, `Record`.
 - Chaining works: `RRef.Field(3).Value := x`, `RRef.KeyIndex(1).FieldIndex(1).Name`.
 
 ### 2.5 Text
 
-✅ `CopyStr`, `StrLen`, `MaxStrLen`, `StrPos`, `StrSubstNo`, `Format`, `LowerCase`, `UpperCase`, `DelChr`, `ConvertStr`, `PadStr`, `IncStr`, `SelectStr`, `Evaluate`, `DelStr`, `InsStr`, `StrCheckSum`, and instance methods `Contains`, `StartsWith`, `EndsWith`, `IndexOf`, `LastIndexOf`, `IndexOfAny`, `Replace`, `Split`, `Substring`, `ToLower`, `ToUpper`, `Trim`, `TrimStart`, `TrimEnd`, `PadLeft`, `PadRight`, `Remove`, `s[i]`.
+✅ `CopyStr`, `StrLen`, `MaxStrLen`, `StrPos`, `StrSubstNo`, `Format`, `LowerCase`, `UpperCase`, `DelChr`, `ConvertStr`, `PadStr`, `IncStr`, `SelectStr`, `Evaluate`, `DelStr`, `InsStr`, `StrCheckSum`, and the instance methods `Contains`, `StartsWith`, `EndsWith`, `IndexOf`, `LastIndexOf`, `IndexOfAny`, `Replace`, `Split`, `Substring`, `ToLower`, `ToUpper`, `Trim`, `TrimStart`, `TrimEnd`, `PadLeft`, `PadRight`, `Remove`, `s[i]`.
 
 ### 2.6 Collections & builders
 
@@ -194,11 +198,11 @@ All ✅ unless noted:
 |---|---|---|
 | `Abs`, `Round`, `Power`, `Random`, `Randomize`, `Today`, `Time`, `CurrentDateTime`, `WorkDate`, `CalcDate`, `Date2DMY`, `Date2DWY`, `DMY2Date`, `DWY2Date`, `CreateDateTime`, `DT2Date`, `DT2Time`, `ClosingDate`, `NormalDate`, `RoundDateTime`, `Evaluate`, `Format`, `Clear`, `ClearAll`, `GetLastErrorText`, `ClearLastError`, `GetLastErrorCallStack`, `ArrayLen`, `CopyArray`, `CompressArray`, `Message`, `Error`, `Confirm`, `StrMenu`, `Sleep`, `GuiAllowed`, `CompanyName`, `UserId`, `UserSecurityId`, `SessionId`, `CreateGuid`, `IsNullGuid`, `GetUrl`, `GlobalLanguage`, `WindowsLanguage`, `SelectLatestVersion`, `CurrentClientType`, `CurrentExecutionMode`, `CopyStream`, `Variant2Date`, `Variant2Time`, `DaTi2Variant`, `Codeunit.Run`, `Page.Run`, `Report.Run`, `DownloadFromStream`, `UploadIntoStream`, `Database::` / `Codeunit::` / `Enum::` ids | `CurrReport`, `CurrPage`, `CurrFieldNo`, `Hyperlink`, `LogMessage`, `FeatureTelemetry`, `Download`, `Upload`, `FileExists`, `ErrorInfo` | Encryption functions, error-collection functions, `IsNull`, `GetDotNetType`, `ApplicationPath`, `TemporaryPath`, `CaptionClassTranslate`, `GetDocumentUrl` |
 
-`Message` / `Error` captured in run result; `Confirm` / `StrMenu` answers scriptable.
+`Message` / `Error` are captured in the run result; `Confirm` / `StrMenu` answers can be scripted.
 
 ### 2.10 Native codeunits
 
-Called natively on real object, so their DotNet-based implementation works:
+These system codeunits are called on the real object, so their DotNet-based implementation works:
 
 | Codeunit | Coverage |
 |---|---|
@@ -218,13 +222,15 @@ Called natively on real object, so their DotNet-based implementation works:
 - All errors reported at once, with line and column
 - Verbose mode: source line, caret and hint under each error; runtime errors explain 1-based vs 0-based indexes, missing dictionary keys, …
 - "Did you mean" for unknown methods, fields, tables and codeunits
-- No error cascade after unknown call
-- Warning for FlowField read without `CalcFields`
+- No error cascade after an unknown call
+- Warning for a FlowField read without `CalcFields`
 - Error codes can be hidden for cleaner output
 
 ---
 
-## 3. AL usage
+## 3. Calling ALI from AL
+
+For developers who want to embed ALI in their own extension: an AI tool, a job, a custom page.
 
 - [Public objects](#public-objects)
 - [Quick start](#quick-start)
@@ -236,9 +242,6 @@ Called natively on real object, so their DotNet-based implementation works:
 - [Stored compiled script](#stored-compiled-script)
 - [Syntax check only](#syntax-check-only)
 - [Pitfalls](#pitfalls)
-- [Reference hosts](#reference-hosts)
-
----
 
 ### Public objects
 
@@ -250,9 +253,7 @@ Called natively on real object, so their DotNet-based implementation works:
 | [`ALI Exec Result`](Runtime/ALIExecResult.Codeunit.al) | codeunit 51030 | Run outcome: success, error + position, return value, messages |
 | `ALI Exec Mode`, `ALI Dialog Mode`, `ALI Interaction Mode`, `ALI Message Mode` | enums 51004, 51015–51017 | Option values (see [Run options](#run-options)) |
 
-`ALI Engine` and `ALI Run Options` are **`SingleInstance`**: settings persist for the whole session and are shared with every other host (Script Editor, AI tool…). Set everything you depend on before each run.
-
----
+`ALI Engine` and `ALI Run Options` are **`SingleInstance`**: settings persist for the whole session and are shared with every other caller (Script Editor, AI tool…). Set everything you depend on before each run.
 
 ### Quick start
 
@@ -263,7 +264,7 @@ var
     RunOptions: Codeunit "ALI Run Options";
     Result: Codeunit "ALI Exec Result";
 begin
-    RunOptions.Reset();                                          // drop options left by another host
+    RunOptions.Reset();                                          // drop options left by another caller
     RunOptions.SetMode("ALI Exec Mode"::Simulation.AsInteger()); // roll back every DB write
     Engine.SetRequireOnRun(false);                               // first procedure = entry point
 
@@ -272,7 +273,7 @@ begin
 end;
 ```
 
-With source:
+With this source:
 
 ```al
 procedure Main(): Integer
@@ -284,28 +285,24 @@ begin
 end;
 ```
 
----
-
 ### Script shape and entry point
 
 | Shape | Example |
 |---|---|
-| Statement block | `Message('Hello');` — wrapped in implicit `OnRun` |
+| Statement block | `Message('Hello');` — wrapped in an implicit `OnRun` |
 | Procedure set | globals (`var ...`) + procedures + optional `trigger OnRun()` |
 | Codeunit shell | `codeunit 50000 X { ... }` |
 
 Entry point:
 
-- **Default** (`Engine.SetRequireOnRun(false)`): procedure named `OnRun`, else **first declared** procedure. Declare entry procedure first — a helper declared first runs with zero parameters.
-- **Strict** (`Engine.SetRequireOnRun(true)`): only `trigger OnRun()` qualifies; missing = error `ALI1000`.
+- **Default** (`Engine.SetRequireOnRun(false)`): the procedure named `OnRun`, else the **first declared** procedure. Declare the entry procedure first — a helper declared first would run with zero parameters.
+- **Strict** (`Engine.SetRequireOnRun(true)`, used by the Script Editor): only `trigger OnRun()` qualifies; missing = error `ALI1000`.
 
-Entry procedure/trigger may return a value (`trigger OnRun(): Integer`), returned formatted in `Result.ResultText()`.
-
----
+The entry procedure/trigger may return a value (`trigger OnRun(): Integer`), available formatted in `Result.ResultText()`.
 
 ### Compile, then run
 
-`CompileAndRun` is a shortcut. Split both steps to inspect warnings before running or to keep compiled script:
+`CompileAndRun` is a shortcut. Split both steps to inspect warnings before running, or to keep the compiled script:
 
 ```al
 procedure CompileThenRun(Source: Text): Text
@@ -326,7 +323,7 @@ begin
     if Diags.WarningCount() > 0 then
         Output.AppendLine(Diags.ToText()); // e.g. FlowField read without CalcFields
 
-    Engine.RunCompiled(Result);            // runs last compiled script
+    Engine.RunCompiled(Result);            // runs the last compiled script
     Output.Append(Result.ToText());
     exit(Output.ToText());
 end;
@@ -334,12 +331,12 @@ end;
 
 | Engine procedure | Effect |
 |---|---|
-| `Compile(Source, var Diags): Boolean` | Compiles; result kept in engine |
-| `RunCompiled(var Result): Boolean` | Runs kept script; fails if none compiled |
-| `CompileAndRun(Source, var Result): Boolean` | Both; on compile failure `Result` carries first error |
-| `Warmup()` | Optional, once per session (e.g. on page open): first run ~600 ms → ~130 ms |
+| `Compile(Source, var Diags): Boolean` | Compiles; result kept in the engine |
+| `RunCompiled(var Result): Boolean` | Runs the kept script; fails if none compiled |
+| `CompileAndRun(Source, var Result): Boolean` | Both; on compile failure `Result` carries the first error |
+| `Warmup()` | Optional, once per session (e.g. on page open): first run drops from ~600 ms to ~130 ms |
 
-#### Compile options (`ALI Engine`)
+Compile options (`ALI Engine`):
 
 | Setter | Default | Effect |
 |---|---|---|
@@ -347,11 +344,9 @@ end;
 | `SetRequireOnRun(Boolean)` | `false` | Strict `trigger OnRun()` entry point |
 | `SetVerbose(Boolean)` | `false` | Errors quote source line + caret + hint. Same as `RunOptions.SetVerbose` (either enables it) |
 
----
-
 ### Reading diagnostics
 
-`ALI Diag Bag` collects all diagnostics, never stops at first error.
+`ALI Diag Bag` collects all diagnostics and never stops at the first error.
 
 | Procedure | Returns |
 |---|---|
@@ -366,9 +361,7 @@ for i := 1 to Diags.Count() do
         Log(StrSubstNo('%1 (%2,%3): %4', Diags.GetCode(i), Diags.GetLine(i), Diags.GetColumn(i), Diags.GetMessage(i)));
 ```
 
-`RunOptions.SetHideDiagCodes(true)` drops `ALI1234: ` prefix from texts (useful for LLM hosts).
-
----
+`RunOptions.SetHideDiagCodes(true)` drops the `ALI1234: ` prefix from texts (useful when the reader is an LLM).
 
 ### Reading the result
 
@@ -378,7 +371,7 @@ for i := 1 to Diags.Count() do
 | `ToText()` | One-line summary (`OK -> value [...]` / `ERROR(line,col): message [...]`) |
 | `HasResult()`, `ResultText()`, `ResultTypeOrd()` | Entry procedure return value, formatted, and its `"ALI Type Kind"` ordinal |
 | `ErrorMessage()`, `ErrorLine()`, `ErrorColumn()`, `ErrorSourceText()` | Runtime or compile error, script position, failing source line (verbose only) |
-| `CollectedMessageCount()`, `GetCollectedMessage(i)` | Every `Message(...)` raised by script |
+| `CollectedMessageCount()`, `GetCollectedMessage(i)` | Every `Message(...)` raised by the script |
 | `RuntimeWarningCount()`, `GetRuntimeWarning(i)` | Runtime warnings (e.g. unscripted `Confirm`) |
 | `StartDateTime()`, `EndDateTime()`, `DurationMs()`, `ExecutedStatements()` | Metrics |
 
@@ -392,11 +385,9 @@ if Result.HasResult() then
     exit(Result.ResultText());
 ```
 
----
-
 ### Run options
 
-Set on `ALI Run Options` **before** `Compile`/`RunCompiled`. `Reset()` restores all defaults below.
+Set on `ALI Run Options` **before** `Compile` / `RunCompiled`. `Reset()` restores all defaults.
 
 ```al
 procedure ConfigureRun()
@@ -414,10 +405,10 @@ begin
     RunOptions.SetInteractionMode("ALI Interaction Mode"::Default.AsInteger());
 
     // Scripted Confirm / StrMenu answers
-    RunOptions.QueueConfirmAnswer(true);     // 1st Confirm() -> true
-    RunOptions.QueueConfirmAnswer(false);    // 2nd Confirm() -> false
+    RunOptions.QueueConfirmAnswer(true);      // 1st Confirm() -> true
+    RunOptions.QueueConfirmAnswer(false);     // 2nd Confirm() -> false
     RunOptions.SetDefaultConfirmAnswer(true); // every later Confirm() -> true
-    RunOptions.SetDefaultStrMenuAnswer(2);   // every StrMenu() -> option 2
+    RunOptions.SetDefaultStrMenuAnswer(2);    // every StrMenu() -> option 2
 
     // Capability / security gates
     RunOptions.SetAllowHttp(false);
@@ -430,54 +421,50 @@ begin
 end;
 ```
 
-#### Exec mode — `SetMode` (`ALI Exec Mode`)
+**Exec mode** — `SetMode` (`ALI Exec Mode`)
 
 | Value | Default | Behavior |
 |---|---|---|
-| `Normal` (0) | ✔ | Writes persist. Script `COMMIT` is real. Runtime error rolls back to run start (or last script `COMMIT`). |
-| `Simulation` (1) | | Every DB write rolled back at end, even on success. `COMMIT` ignored (script and called objects). |
+| `Normal` (0) | ✔ | Writes persist. Script `COMMIT` is real. A runtime error rolls back to the run start (or the last script `COMMIT`). |
+| `Simulation` (1) | | Every DB write is rolled back at the end, even on success. `COMMIT` is ignored (in the script and in called objects). |
 
-> ⚠️ In both modes **caller's pending writes are committed** just before run starts. Do not call ALI mid-transaction you may need to roll back.
+> ⚠️ In both modes the **caller's pending writes are committed** just before the run starts. Do not call ALI in the middle of a transaction you may need to roll back.
 
-#### Message — `SetMessageMode` (`ALI Message Mode`)
-
-`Message`, `Error` and `Sleep` always intercepted.
+**Message** — `SetMessageMode` (`ALI Message Mode`). `Message`, `Error` and `Sleep` are always intercepted.
 
 | Value | Default | Behavior |
 |---|---|---|
-| `Log` (0) | ✔ | Messages only collected in result |
-| `Show` (1) | | Collected **and** shown as real `Message` when session has GUI |
+| `Log` (0) | ✔ | Messages only collected in the result |
+| `Show` (1) | | Collected **and** shown as a real `Message` when the session has a GUI |
 
-#### GuiAllowed — `SetDialogMode` (`ALI Dialog Mode`)
+**GuiAllowed** — `SetDialogMode` (`ALI Dialog Mode`)
 
 | Value | Default | Script's `GuiAllowed()` |
 |---|---|---|
-| `Show` (0) | ✔ | Real `GuiAllowed()` of host session |
-| `Hide` (1) | | Always `false` — `if GuiAllowed then` blocks and `Dialog` windows skipped |
+| `Show` (0) | ✔ | Real `GuiAllowed()` of the host session |
+| `Hide` (1) | | Always `false` — `if GuiAllowed then` blocks and `Dialog` windows are skipped |
 
-#### Confirm / StrMenu — `SetInteractionMode` (`ALI Interaction Mode`)
+**Confirm / StrMenu** — `SetInteractionMode` (`ALI Interaction Mode`)
 
 | Value | Default | Behavior |
 |---|---|---|
 | `Default` (0) | ✔ | Scripted answer; without one, `Confirm` → `false` / `StrMenu` → `0` + warning |
 | `Error` (1) | | Scripted answer; without one, runtime error |
-| `Show` (2) | | Real `Confirm`/`StrMenu` dialog when session has GUI, else as `Default` |
+| `Show` (2) | | Real `Confirm`/`StrMenu` dialog when the session has a GUI, else as `Default` |
 
-Queued answers (`QueueConfirmAnswer`, `QueueStrMenuAnswer`) consumed in order, then default (`SetDefaultConfirmAnswer`, `SetDefaultStrMenuAnswer`) applies. `ClearConfirmAnswers()` / `ClearStrMenuAnswers()` empty queues.
+Queued answers (`QueueConfirmAnswer`, `QueueStrMenuAnswer`) are consumed in order, then the default (`SetDefaultConfirmAnswer`, `SetDefaultStrMenuAnswer`) applies. `ClearConfirmAnswers()` / `ClearStrMenuAnswers()` empty the queues.
 
-#### Gates and output
+**Gates and output**
 
 | Setter | Default | Effect |
 |---|---|---|
 | `SetAllowHttp(Boolean)` | `false` | Allow outbound `HttpClient` calls |
-| `SetAllowProtectedWrite(Boolean)` | `false` | Allow writes to posted/ledger tables |
-| `SetApplyRecordSecurity(Boolean)` | `false` | Apply `TOO Record Security Filters` on every table read (AI hosts) |
+| `SetAllowProtectedWrite(Boolean)` | `false` | Allow writes to posted documents, ledger entries and registers |
+| `SetApplyRecordSecurity(Boolean)` | `false` | Apply the application's record security filters on every table read |
 | `SetVerbose(Boolean)` | `false` | Same as `Engine.SetVerbose` |
 | `SetHideDiagCodes(Boolean)` | `false` | Omit `ALIxxxx:` codes in diagnostics / errors |
 
 `Engine.SetAllowHttp`, `SetAllowProtectedWrite` and `SetApplyRecordSecurity` forward to `ALI Run Options` — call them **after** `RunOptions.Reset()`, never before.
-
----
 
 ### Stored compiled script
 
@@ -494,353 +481,105 @@ if not Engine.LoadCompiled(StoredText) then   // false: incompatible build -> re
 Engine.RunCompiled(Result);
 ```
 
-Stored text includes script **and** every AL object it calls. Key it on a hash of source, app version and compile options, and offer forced recompile when called objects change.
-
----
+The stored text includes the script **and** every AL object it calls. Key it on a hash of source, ALI app version, preprocessor symbols and compile options, and offer a forced recompile for when called objects change.
 
 ### Syntax check only
 
-`Engine.CheckDiagnostics(Source, Diags)`: fast check without producing a runnable script (`RunCompiled` fails afterwards). Called objects checked by signature only. Use for as-you-type checks; `Compile` before running.
-
----
+`Engine.CheckDiagnostics(Source, Diags)`: fast check without producing a runnable script (`RunCompiled` fails afterwards). Called objects are checked by signature only. Use it for as-you-type checks; `Compile` before running.
 
 ### Pitfalls
 
-- **Single instance.** Another host may have left `SetRequireOnRun(true)`, verbose or Simulation on. Call `RunOptions.Reset()` and every `Engine.Set*` you rely on before each run.
-- **Caller commit.** Running a script commits caller's pending writes first.
+- **Single instance.** Another caller may have left `SetRequireOnRun(true)`, verbose or Simulation on. Call `RunOptions.Reset()` and every `Engine.Set*` you rely on before each run.
+- **Caller commit.** Running a script commits the caller's pending writes first.
 - **Statement budget.** Runs abort after 100M executed statements.
-- **Entry point.** In default mode first declared procedure runs; declare entry procedure first.
-- **Background sessions.** `Show` modes need GUI session; in job queue / web service they fall back to headless behavior.
+- **Entry point.** In default mode the first declared procedure runs; declare the entry procedure first.
+- **Background sessions.** `Show` modes need a GUI session; in job queue / web service contexts they fall back to headless behavior.
 
----
-
-### Reference hosts
-
-| Host | File | Setup |
-|---|---|---|
-| AI tool `Run AL Code` | [`ECA AI/.../RunALCode.Codeunit.al`](../../ECA%20AI/Codeunit/AI%20Tools/Code/RunALCode.Codeunit.al) | Simulation, verbose, hidden codes, record security on, HTTP on, first-procedure entry |
-| Script Editor | [`ALCodeEditor/ALIScriptEditor.Page.al`](ALCodeEditor/ALIScriptEditor.Page.al) | Options from stored script record, strict `OnRun`, stored compiled script, `Warmup` on open |
+The Script Editor page ([`ALCodeEditor/ALIScriptEditor.Page.al`](ALCodeEditor/ALIScriptEditor.Page.al)) is a complete reference caller: options from the stored script record, strict `OnRun`, stored compiled script, `Warmup` on open.
 
 ---
 
 ## 4. Architecture
 
-Pure-AL compiler pipeline + register-bytecode interpreter, following native AL compiler behavior closely. Technical details below.
-
-- [Folder layout](#folder-layout)
-- [4.1 Compilation pipeline](#41-compilation-pipeline)
-- [4.2 Core representation: struct-of-arrays](#42-core-representation-struct-of-arrays)
-- [4.3 Lexer](#43-lexer)
-- [4.4 Parser](#44-parser)
-- [4.5 Binder](#45-binder-semantic-phase)
-- [4.6 Method dispatch model](#46-method-dispatch-model)
-- [4.7 Paren-less calls](#47-paren-less-calls)
-- [4.8 Optimizer](#48-optimizer-optional)
-- [4.9 Lowerer + module](#49-lowerer--module)
-- [4.10 Interpreter](#410-interpreter)
-- [4.11 JSON opcode extension](#411-json-opcode-extension)
-- [4.12 Performance model](#412-performance-model)
-- [4.13 Guarantees](#413-guarantees)
-
----
+ALI is a classic compiler pipeline followed by a register-based bytecode interpreter, all in AL. This section explains the general principles; the source is the detailed reference.
 
 ### Folder layout
 
 | Folder | Content |
 |---|---|
-| [`Foundation/`](Foundation/) | Shared enums (`TokenKind`, `NodeKind`, `Opcode`, `TypeKind`, run modes…), token table, diagnostics bag (`ALI Diag Bag`), capacity constants (`ALI Limits`) |
+| [`Foundation/`](Foundation/) | Shared enums (`TokenKind`, `NodeKind`, `Opcode`, `TypeKind`, run modes…), token table, diagnostics bag, capacity constants (`ALI Limits`) |
 | [`Frontend/`](Frontend/) | Lexer, parser, flat AST store, preprocessor symbols |
-| [`Semantic/`](Semantic/) | Binder, symbol table, type rules, builtin/object registries, record & option metadata, optimizer passes |
-| [`Runtime/`](Runtime/) | Engine facade, run options, exec result, lowerer, module, interpreter and per-family runtimes (Record, Json, Xml, Http, List, Dictionary, Stream, Native codeunits…) |
-| [`ALCodeEditor/`](ALCodeEditor/) | Script Editor page + control add-in (live diagnostics, API catalog, run options page) |
+| [`Semantic/`](Semantic/) | Binder, symbol table, type rules, builtin and object registries, record & option metadata, optimizer passes |
+| [`Runtime/`](Runtime/) | Engine facade, run options, exec result, lowerer, module, interpreter and per-family runtimes (Record, Json, Xml, Http, List, Dictionary, Stream, native codeunits…) |
+| [`ALCodeEditor/`](ALCodeEditor/) | Script Editor page + control add-in (live diagnostics, API catalog, options page, preprocessor symbols page) |
 | [`StoredALScript/`](StoredALScript/) | `ALI Stored Script` table (source + stored bytecode) and list page |
 | [`Test/`](Test/) | Test codeunits per pipeline stage and test objects (tables, pages, events) |
 
----
-
-### 4.1 Compilation Pipeline
+### 4.1 Compilation pipeline
 
 ```
 Source
- → Lexer        → Token Store + Diags
- → Parser       → Flat AST + Diags
- → Binder       → Symbols, Types, Slots + Diags
+ → Lexer        → Token table + diagnostics
+ → Parser       → Flat AST + diagnostics
+ → Binder       → Symbols, types, register slots + diagnostics
  → Optimizer    → Rewritten AST (optional)
  → Lowerer      → Module (typed register bytecode)
- → Interpreter  → Exec Result
+ → Interpreter  → Exec result
 ```
 
-Public API: see [AL usage](#3-al-usage). Engine mapping: `Compile` = full pipeline, Module kept for `RunCompiled`; `CheckDiagnostics` = lexer → parser → binder only, called objects harvested for signatures only, no Module; `SaveCompiled` / `LoadCompiled` = Module serialized as JSON; `Warmup` instantiates pipeline once per session.
+- `Compile` runs the full pipeline and keeps the Module for `RunCompiled`. `CheckDiagnostics` stops after the binder. `SaveCompiled` / `LoadCompiled` serialize the Module as JSON.
+- Stages communicate through flat data stores (codeunits passed by `var`). Diagnostics are collected, never thrown at the first error.
+- Execution runs **lowered bytecode, not the AST**: compile heavy, run fast.
+- Calls to real AL objects (codeunits, tables, events) are resolved by the [`ALI Object Registry`](Semantic/ALIObjectRegistry.Codeunit.al), which reads the object's source from the database and compiles it together with the script.
 
-- All stages communicate via **flat data stores (var codeunits)**.
-- Diagnostics are **collect-all**; errors propagate via `ErrorType`.
-- Execution runs **lowered bytecode (not AST)** → "compile heavy, run fast".
-- Calls to real AL objects (codeunits, tables, pages…) are resolved by [`ALI Object Registry`](Semantic/ALIObjectRegistry.Codeunit.al), which harvests the object source and binds it together with the script.
+### 4.2 Core representation: struct-of-arrays
 
----
-
-### 4.2 Core Representation: Struct-of-Arrays
-
-Due to AL constraints (no heap objects/pointers):
-
-- All structures = **parallel arrays indexed by int handles**
-- Compile-time: `List of [T]`
-- Runtime: **fixed arrays** (sealed at `LoadModule`)
-- Limits enforced via [`ALI Limits`](Foundation/ALILimits.Codeunit.al)
-
-Enums (`TokenKind`, `NodeKind`, `Opcode`, etc.) are **dense, append-only ordinals** → stable serialization.
-
----
+AL has no heap objects or pointers, so every structure — tokens, AST nodes, symbols, instructions — is a set of **parallel arrays indexed by integer handles**. At compile time these are `List of [T]`; at run time they are fixed arrays, sealed when the Module is loaded. Enums such as `TokenKind`, `NodeKind` and `Opcode` are dense, append-only ordinals, which keeps serialized modules stable across versions.
 
 ### 4.3 Lexer
 
-File: [`Frontend/ALILexer.Codeunit.al`](Frontend/ALILexer.Codeunit.al)
-
-Single-pass scanner over `Text`.
-
-Outputs **Token Table**:
-
-- Columns: `Kind`, `Pos`, `Len`, `Line`, `Col`, `ValueIdx`
-- Separate literal pools (int, decimal, text, datetime…)
-
-Key features:
-
-- **Identifier interning** (case-insensitive → int IDs)
-- Contextual keywords
-- Full AL literal/operator support
-- Line offsets stored once (used by diagnostics)
-
----
+[`Frontend/ALILexer.Codeunit.al`](Frontend/ALILexer.Codeunit.al) — single-pass scanner producing a token table (`Kind`, `Pos`, `Len`, `Line`, `Col`, `ValueIdx`) with separate literal pools. Identifiers are interned case-insensitively to integer ids, so nothing after the lexer compares strings. Preprocessor directives are resolved here, using the symbols declared for the object's extension.
 
 ### 4.4 Parser
 
-Files: [`Frontend/ALIParser.Codeunit.al`](Frontend/ALIParser.Codeunit.al), [`Frontend/ALIParseCtx.Codeunit.al`](Frontend/ALIParseCtx.Codeunit.al), [`Frontend/ALIParserExpr.Codeunit.al`](Frontend/ALIParserExpr.Codeunit.al)
+[`Frontend/ALIParser.Codeunit.al`](Frontend/ALIParser.Codeunit.al) and companions — recursive descent producing a flat AST (each node: `Kind`, `Token`, `FirstChild`, `ChildCount`, `Extra`). Expressions use Pratt parsing with native AL precedence, including the if/else semicolon rule. Error recovery (token insertion + resync) lets the parser report several errors per pass. A nesting-depth guard prevents AL stack overflow.
 
-Recursive descent → **flat AST (CSR layout)**:
+### 4.5 Binder
 
-- Node columns: `Kind`, `Token`, `FirstChild`, `ChildCount`, `Extra`
-- Missing nodes use sentinel (keeps indexing stable)
+[`Semantic/ALIBinder.Codeunit.al`](Semantic/ALIBinder.Codeunit.al) — single pass over the AST resolving symbols, types, conversions and register slots. Type rules mirror the native operator matrix; a builtin registry describes the whole AL surface (with partial implementations reporting "not implemented"); metadata oracles resolve tables, fields and enums at bind time. The AST stays immutable: the binder writes parallel annotation columns (`TypeOrd`, `SymbolId`, `ConvOrd`, `SlotIndex`). After binding, **no type or name resolution happens at run time**.
 
-Key behaviors:
+Methods on built-in types (Record, RecordRef, Json, Xml, Http, List, …) are dispatched by family: each family owns a range of negative symbol ids, and the lowerer maps them to family-specific opcodes. Calls on native system codeunits (Type Helper, Regex, …) bind to builtin rows and are executed on the real codeunit.
 
-- **Pratt expression parsing** with native AL precedence quirks
-- Exact **if/else semicolon binding rule**
-- Error recovery: token insertion + panic resync
-- Nesting-depth guard (prevents AL stack overflow)
+Events need no runtime machinery: when an object is read from the database, each event publisher's empty body is rewritten into direct calls to its active subscribers, so raising an event is an ordinary procedure call.
 
-Accepted units:
+### 4.6 Optimizer (optional)
 
-- Statement block (wrapped in `OnRun`)
-- Procedure set (+ optional globals, + an optional top-level `trigger OnRun()`)
-- Codeunit shell
+[`Semantic/Optimizer/`](Semantic/Optimizer/) — AST-to-AST passes selected through an enum + interface: constant folding, constant propagation, dead-branch elimination. Enabled with `SetOptimize(true)`.
 
-**Entry point:** the proc named `OnRun`, else the first declared proc. With `"ALI Engine".SetRequireOnRun(true)` (the Script Editor) only `trigger OnRun()` qualifies and its absence is `ALI1000`. Unlike native AL, a trigger may declare a return value (`trigger OnRun(): Integer`, `trigger OnRun() Msg: Text`), parsed exactly like a procedure's.
+### 4.7 Lowerer and module
 
-**Stored bytecode:** `"ALI Engine".SaveCompiled()` / `LoadCompiled()` serialize the Module (`"ALI Module".Serialize`, JSON). The only session-scoped operand, `OPT_TO_TEXT`'s option-set id, is stored by spelling and re-interned on load (`"ALI Option Meta".DescribeSet` / `InternDescribed`). Serialized Module embeds harvested source of every called object; Script Editor keys it on SHA-256 of source + app version + compile options (`CompiledHash` in [`ALIScriptEditor.Page.al`](ALCodeEditor/ALIScriptEditor.Page.al)).
+[`Runtime/ALILowerer.Codeunit.al`](Runtime/ALILowerer.Codeunit.al), [`Runtime/ALIModule.Codeunit.al`](Runtime/ALIModule.Codeunit.al) — transform the AST into register-based bytecode. The Module holds instruction columns (`Op, A, B, C`), typed constant pools, a procedure table, an operand pool for variadic operations and a debug map (PC → source line/column) used for runtime error positions.
 
----
+### 4.8 Interpreter
 
-### 4.5 Binder (Semantic Phase)
+[`Runtime/ALIInterpreter.Codeunit.al`](Runtime/ALIInterpreter.Codeunit.al), delegating to `Runtime/ALI*Runtime.Codeunit.al` per family.
 
-File: [`Semantic/ALIBinder.Codeunit.al`](Semantic/ALIBinder.Codeunit.al)
+- Typed registers (Int, Decimal, Text, Boolean, handles…), fixed arrays, no boxing where avoidable.
+- A statement budget (100M) stops runaway loops with error `ALI950`.
+- **Transaction scope**: a run is a conditional `Codeunit.Run` on the interpreter itself, the only AL construct that gives it its own rollback scope. In Simulation mode the loop runs with commits ignored and a clean run ends with a sentinel error that forces the rollback, then reports success.
+- `[TryFunction]` calls re-enter the execution loop natively from a try function, so a failing callee unwinds only its own frames and the script's `GetLastErrorText` is set.
 
-Single AST pass resolving:
+### 4.9 Performance model
 
-- Symbols (scoped, int-keyed via interned names)
-- Types + conversions (`ConvOrd`)
-- Register slots (per type class)
+- Everything is an integer after lexing: ids, slots, types, opcodes. No string comparison in the hot path.
+- No dynamic allocation while running; all state is pre-sized when the Module is loaded.
+- Register VM rather than AST walking; all metadata and type resolution done at compile time.
+- **Hot opcodes are inlined in the execution loop.** An AL procedure call costs far more than the work it usually wraps, so the most frequent operations live directly in the loop instead of helper procedures. This brought the ratio from about ×30 to about ×11 vs native, at the price of a large and deliberately ugly main loop.
+- Room is left: inlining everything and merging all runtime codeunits into one would come closer still to native speed. Not done on purpose — it would be tens of thousands of lines in a single unmaintainable codeunit.
 
-Core components:
+### 4.10 Guarantees
 
-- **Symbol Table** (struct-of-arrays + scope chain)
-- **Type Rules** (operator matrix from native AL)
-- **Builtin Registry** (complete surface; partial impl allowed)
-- **Metadata oracles** (Record/Field/Enum resolution at bind-time)
-
-Key properties:
-
-- **No runtime type checks** (fully annotated at bind)
-- **Two-pass procedure binding** (forward calls)
-- **Strict var-param + lvalue validation**
-- **Register allocation**: params → locals → reusable temp pool
-
-AST is immutable; binder writes **parallel annotation columns**:
-`TypeOrd`, `SymbolId`, `ConvOrd`, `SlotIndex`.
-
----
-
-### 4.6 Method Dispatch Model
-
-Uses **negative SymbolId markers**:
-
-```
-FieldRef/KeyRef (-16000) → RecordRef (-15000) → Media (-14000) → BigText/SecretText (-13000) → Xml → Blob → Json (-10000) → Http → Dialog → RecordId → Dict → List → TextBuilder → Builtin → Stream → Record (-1000)
-```
-
-- `SymbolId > 0` → user symbol
-- `SymbolId < 0` → dispatch family + method ID
-- Dispatch resolved in lowerer/interpreter via mark ranges
-
-#### Ladder ordering
-
-Every dispatch cascade is a **descending `Sym <= X` ladder**, so a new family must take the MOST negative mark or it is never matched.
-
-**The ladder has five rungs to keep in step** (statement dispatch ×2, expression dispatch ×2, property-set assignment ×1); miss one and the RecordRef arm silently swallows a FieldRef call.
-
-#### RecordRef
-
-`RecordRef` (-15000) is deliberately a *thin* family: only the RecordRef-only surface carries this mark — `Open`/`Close`/`Number`/`Name`/`Caption`/`GetTable`/`SetTable`/`Duplicate`/`FieldExist`/`System*No`/`Field`/`FieldIndex`/`KeyIndex` (ids 1-17), plus the **field-NUMBER** surface (ids 18-39: `SetRange`/`SetFilter`/`Validate`/`ModifyAll`/`SetLoadFields`/…).
-
-Every other RecordRef method is re-marked `Record` (-1000) by the binder and lowered to the existing `REC_*` opcode — a RecordRef receiver holds the same `"ALI Rec Runtime"` handle a Record receiver holds.
-
-The field-number block has its own ids rather than reusing the `REC_*` twins because the twins take a **bind-time-constant** field number burned into the instruction (the Record fast path), while `REF_METHOD`'s operand pool is the live-register kind, so a run-time field number is just one more live operand. Its packing repurposes the freed `OutCls` digit as a flags field, deriving the result class from the method id (the `FLD_METHOD` trick), needed because `GetRangeMin`/`GetRangeMax` return a Variant (class 11) on this receiver.
-
-#### FieldRef / KeyRef
-
-`FieldRef`/`KeyRef` (-16000) share **one** mark and **one** opcode (`FLD_METHOD`), separated by method-id range (FieldRef 1-31, KeyRef 40-43) — a KeyRef is four methods, and a third family would have cost more ladder rungs than it saved. Their VALUE is a packed pair `slot*2048 + recordHandle` in a plain Int register, so `:=`, parameters and returns come free from the Int machinery, with no bank and no lifecycle.
-
-#### Receiver predicates and chained receivers
-
-**Receiver predicates are structural.** Every `Is*Receiver` in `TryDispatchMemberMethod` peeks the receiver *without binding it* — `NKind = NameExpr` plus a `Symbols.Lookup` — because on the parenthesized path the receiver has not been bound yet and binding it twice is the hazard the convention exists to avoid. The cost: a **chained** receiver (`RRef.Field(3).Value` — a member call on another call's RESULT) matches none of them. Two mechanisms coexist:
-
-- families that peek through `ExprTypePeek` (Xml, Json, Http, Text, Variant, RecordId) speculatively bind a non-name receiver against a throwaway diag bag and so handle chains;
-- families that are strictly NameExpr-only (List, Dictionary, Stream, TextBuilder, Dialog, BigText, SecretText) do **not** — `Dict.Keys().Count()` is unsupported for them.
-
-`RecordRef`/`FieldRef`/`KeyRef` keep their structural predicates for the variable case and add **one** extra ladder arm (`RefKindOfChainedReceiver`) placed immediately *above* the Xml rung: high enough to claim every ref-typed expression, low enough that the Media and Blob/BigText/SecretText arms above it — which match an *unbound* `Rec.<field>` member access structurally — are never pre-bound behind their backs. Every arm from Xml down already peeks, so that placement adds **zero** speculative binds. A `TypeOrd` fast path in the peek keeps an n-link chain linear instead of 2ⁿ binds.
-
-#### Native codeunit catalogue
-
-`MyCU.Method()` on Type Helper / Base64 Convert / Math / Encoding / Environment Information / Language / Cryptography Management / Data Compression / Temp Blob / Regex is not a family of its own: it binds (`BindNativeCall`, overload chosen on static argument types) to a builtin row of Domain `Native` and rides the Builtin mark / `CALL_BUILTIN_LIVE`, executed by [`ALI Native Runtime`](Runtime/ALINativeRuntime.Codeunit.al) on the real codeunit.
-
-- Stateless codeunits stay `CodeunitRef` (no register, not an operand).
-- Data Compression, Temp Blob and Regex are TypeKind `NativeCodeunit`, an Int handle into the runtime's instance bank, passed as operand 1 like any method receiver.
-- A record argument of a native row (Regex Matches/Groups/Captures/Options, Language's Windows Language — all temporary) is bridged without copying: the native Record var shares the script record's temp dataset (`RecordRef.SetTable(Rec, true)` over `"ALI Rec Runtime".ShareTempRef`) and the current row comes back through `AdoptTempRef`. A `List of [Text]` argument is copied in and replaced after the call.
-- Rows are appended last in the registry so stored BuiltinIds never move.
-- The static platform receivers `Page.Run` / `Report.Run` / `File.DownloadFromStream` / `File.UploadIntoStream` (and the bare legacy File names) are rows of the same catalogue under negative pseudo codeunit ids (`FileNativeId` -1, `PageNativeId` -2, `ReportNativeId` -3), routed by `TryDispatchMemberMethod` right after the `Codeunit.Run` arm (receiver annotated `CodeunitRef`, so not an operand); their record argument goes to the platform through `RecordAsVariant`, as for `Codeunit.Run`.
-
-#### Events in harvested objects
-
-No runtime or binder machinery: `"ALI App. Obj. Metadata".GetALObjectProceduresCode` rewrites each event publisher's empty body into plain AL — one `Codeunit` local + one by-name call per active, non-manual `"Event Subscription"` row, in record order — and keeps `[EventSubscriber]` procedures as plain procedures. Raising an event is then a sibling call and each subscriber a normal cross-object harvest; `sender` of a table event is the unit's `Rec`. Trigger events stay native (record runtime).
-
----
-
-### 4.7 Paren-less Calls
-
-AL allows `MyProc;` or `x := MyFunc`.
-
-Handled by:
-
-- Dual-shape arg detection (`InvocationExpr` vs implicit 0 args)
-- Shared dispatch path
-- Same lowering → identical bytecode
-
----
-
-### 4.8 Optimizer (Optional)
-
-Files: [`Semantic/ALIPassManager.Codeunit.al`](Semantic/ALIPassManager.Codeunit.al), [`Semantic/Optimizer/`](Semantic/Optimizer/)
-
-AST-to-AST passes, each an implementation of the `ALI Opt Pass` interface selected through an enum:
-
-- Constant folding (typed + pure builtins)
-- Constant propagation
-- Dead branch elimination
-
-Controlled via `"ALI Engine".SetOptimize(true)` (off by default).
-
----
-
-### 4.9 Lowerer + Module
-
-Files: [`Runtime/ALILowerer.Codeunit.al`](Runtime/ALILowerer.Codeunit.al), [`Runtime/ALIModule.Codeunit.al`](Runtime/ALIModule.Codeunit.al)
-
-Transforms AST → **register-based bytecode**.
-
-Module layout:
-
-- Instruction columns: `Op, A, B, C`
-- Const pools (per type)
-- Proc table (entry PC, registers, params, result)
-- Operand pool (variadic ops)
-- Debug map (PC → source line/column)
-
-Design principle: **frontload complexity to compile phase**.
-
----
-
-### 4.10 Interpreter
-
-File: [`Runtime/ALIInterpreter.Codeunit.al`](Runtime/ALIInterpreter.Codeunit.al), dispatching to `Runtime/ALI*Runtime.Codeunit.al`
-
-Executes:
-
-- **Typed registers (no boxing where possible)**
-- Fixed arrays (fast indexed access)
-- No name/type resolution at runtime
-- Statement budget (`ALI950` after 100M statements, `ALI Limits`) against runaway loops; `RunOptions.SetStatementBudget` currently not read
-
-#### Transaction scope
-
-A run is a conditional `Codeunit.Run` on the interpreter itself — the only AL construct giving the run its own rollback scope. The host's pending writes are **committed** just before it starts.
-
-| Exec mode | Behavior |
-|---|---|
-| `Normal` | Script `COMMIT` is real. A runtime error rolls back to the run start (or last script `COMMIT`). |
-| `Simulation` | Loop runs under `CommitBehavior::Ignore`; a clean run ends with a sentinel error that forces rollback and is reported as success. All DB writes are undone. |
-
-`Message`, `Error` and `Sleep` are always intercepted; `Confirm`/`StrMenu`/`GuiAllowed` follow [`ALI Run Options`](Runtime/ALIRunOptions.Codeunit.al) (see [Run options](#run-options)).
-
-#### `[TryFunction]` calls (`TRY_CALL`, opcode 474)
-
-A try call whose outcome is consumed stages its arguments like `CALL`, then `TRY_CALL A=procId B=boolReg`.
-
-The interpreter cannot catch an arbitrary arm's error inside the loop, so `ExecTryCall` pushes the callee frame with a **return PC of `InstrTotal`** and re-enters `RunLoopFlat` natively from a `[TryFunction]` (`TryRunFrame`) — legal because all run state (PC, frames, bases, registers, alloc stack, loop scratch vars) is codeunit-global. The callee's ordinary `RET` pops the frame and lands on `PC = InstrTotal`, which is exactly the loop's exit condition, so neither `RET` nor the per-instruction path pays anything.
-
-- **Success:** `PC` back to the `TRY_CALL`, `B := true`.
-- **Failure:** fatal errors (budget/stack/registers/limits/uncompiled proc/nesting cap) are re-raised with PC untouched so `Run()` still reports the failing line; any other error unwinds every frame above the call (`UnwindFramesTo`: handle reclaim + base restore), copies the message into the script's `GetLastErrorText`, and sets `B := false`.
-
-Each try level costs AL stack, hence its own cap (64). A try call used as a statement is lowered as a plain `CALL`.
-
----
-
-### 4.11 JSON Opcode Extension
-
-Due to ID space limits:
-
-- `JSON_METHOD` — method IDs < 100
-- `JSON_METHOD2` — method IDs ≥ 100, stored rebased by -100
-
-Operand packing:
-
-```
-A = receiver reg
-B = operand pool index
-C = OutReg * 100000 + OutCls * 10000 + MethodId * 100 + ArgCount
-```
-
-Method IDs partitioned by receiver type:
-
-- JsonObject / JsonArray / JsonToken / JsonValue ranges
-
----
-
-### 4.12 Performance Model
-
-Key principles:
-
-- **Integer-based everything** (ids, slots, types)
-- **No string comparisons after lexing**
-- **No dynamic allocation in hot path**
-- **Register VM > AST walking**
-- **Compile-time resolution of metadata + types**
-- **As close as possible to native operation**
-- **Hot opcodes inlined in `RunLoopFlat`** — an AL procedure call costs far more than the work it usually wraps, so hot dispatch arms and their scratch state live directly in the loop / codeunit members instead of helper procedures (~x30 → ~x15 vs native). Readability traded for speed on purpose. See [Performance](#performance) for measured numbers.
-
----
-
-### 4.13 Guarantees
-
-- Near-native AL semantics on supported surface
-- Deterministic diagnostics (non-short-circuiting)
-- Serializable intermediate representations
-- Fully testable pipeline stages (isolated stores)
+- Near-native AL semantics on the supported surface
+- Deterministic diagnostics: every error reported at once, never just the first
+- Serializable intermediate representations (stored compiled scripts)
+- Each pipeline stage testable in isolation (see [`Test/`](Test/))
