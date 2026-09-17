@@ -8,7 +8,7 @@ Typical uses:
 - **Investigation** — query tables, call existing codeunits, inspect results without leaving the web client.
 - **AI-generated code** — let an AI assistant write and execute AL safely, with clear error feedback it can correct from.
 
-> Most of this app was designed and developed with Anthropic Claude (Fable 5.1 and Opus 5).
+> This app was designed and mostly developed with Anthropic Claude (Fable 5.1 and Opus 5). Even with extended test coverage, error may happen. Alway test it on sandbox before running it on production environement.
 
 ## Contents
 
