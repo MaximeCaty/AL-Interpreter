@@ -1,6 +1,6 @@
 # AL Interpreter for Business Central (ALI)
 
-Write, check and run AL code **directly inside Business Central** — no VS Code, no publishing, no deployment. ALI is a complete AL compiler and interpreter written in pure AL: no .NET assembly, no DLL, no external service. It installs like any other extension.
+Write, check and run AL code **directly inside Business Central** — no VS Code, no publishing, no deployment. ALI is a complete AL compiler and interpreter written in pure AL (no .NET assembly, no external service). It installs like any other extension.
 
 Typical uses:
 
