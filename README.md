@@ -3,7 +3,6 @@
 Write and run AL code **directly inside Business Central** web client. ALI respect precisely native AL code behavious.
 
 Typical uses:
-
 - **Ad-hoc scripts and data fixes** — run a one-off correction on live data.
 - **Investigation** — query tables, test AL concept, inspect results without leaving web client.
 - **AI-generated code** — let an AI assistant write and execute AL safely, with clear error feedback it can correct from.
@@ -29,7 +28,7 @@ Type AL, press **F5**, read the result.
 
 ### Autocompletion
 
-Builtin methods, record field and functions, all are suggested while typing with a searchable dropdown list.
+Builtin methods, record fields and procedures, variable definition, are all suggested while typing in searchable dropdown list.
 
 <!-- SCREENSHOT 2 (optional): completion popup open on `Customer.` showing fields, or hover tooltip on a procedure. -->
 <img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-AutoCompletion.png" alt="Screenshot-AutoCompletion" width="50%"/>
