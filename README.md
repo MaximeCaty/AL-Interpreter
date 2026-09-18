@@ -112,7 +112,7 @@ Sample :
 ### What a cloud build cannot do
 
 Everything the interpreter does on its own — lexing, parsing, binding, optimizing, lowering,
-running, the whole supported feature surface of [chapter 2](#2-supported-features) — is identical
+running, the whole supported feature surface of [chapter 3](#3-supported-features) — is identical
 in both flavors. What differs is anything that has to read **the AL source of an already published
 object**, which lives on table `Application Object Metadata`. That table's scope is `OnPrem`: no
 cloud extension may reference it, and the platform offers no substitute on SaaS.
