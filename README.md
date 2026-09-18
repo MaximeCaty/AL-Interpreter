@@ -13,7 +13,7 @@ Typical uses:
 ## Contents
 
 1. [Live code editor](#1-live-code-editor)
-2. [Build & On-Premise vs Cloud](#2-Build-&-On-Premise-vs-Cloud)
+2. [Build & On-Premise vs Cloud](#2-Build-OnPremise-vs-Cloud)
 3. [Supported features](#3-supported-features)
 4. [Calling ALI from AL](#4-calling-ali-from-al)
 5. [Architecture](#5-architecture)
@@ -107,7 +107,7 @@ Sample :
 
 ---
 
-## 2. Build & On-Premise vs Cloud
+## 2. Build OnPremise vs Cloud
 
 ### What a cloud build cannot do
 
