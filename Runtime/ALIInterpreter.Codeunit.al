@@ -56,7 +56,7 @@
     are not kept in step by hand any more. The debug map is no longer in this list: it is three
     Lists aliased to the module's own columns (see their declaration).
 */
-codeunit 51031 "ALI Interpreter"
+codeunit 51132 "ALI Interpreter"
 {
     Access = Public;
     SingleInstance = true;
