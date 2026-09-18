@@ -1,0 +1,44 @@
+{
+  "id": "999ed8e4-0123-a400-b17c-42e072139999",
+  "name": "AL Interpreter",
+  "publisher": "Maxime Caty",
+  "version": "1.0.0.0",
+  "brief": "Offer live AL code editor and interpreter integrated in Business Central",
+  "description": "Offer live AL code editor and interpreter integrated in Business Central",
+  "privacyStatement": "",
+  "EULA": "",
+  "help": "https://github.com/MaximeCaty/AL-Company-Data-Import-Export",
+  "url": "https://github.com/MaximeCaty/AL-Company-Data-Import-Export",
+  "logo": "",
+  "dependencies": [
+    {  
+      "id": "dd0be2ea-f733-4d65-bb34-a28f4624fb14",
+      "name": "Library Assert",
+      "version": "27.0.0.0",
+      "publisher": "Microsoft"
+    }
+  ],
+  "screenshots": [],
+  "platform": "27.0.0.0",
+  "application": "27.0.0.0",
+  "idRanges": [
+    {
+      "from": 51000,
+      "to": 51200
+    }
+  ],
+  "resourceExposurePolicy": {
+    "allowDebugging": true,
+    "allowDownloadingSource": true,
+    "includeSourceInSymbolFile": true
+  },
+  "runtime": "16.0",
+  "features": [
+    "NoImplicitWith",
+    "TranslationFile"
+  ],
+  "target": "Cloud",
+  "preprocessorSymbols": [
+    "CLOUD"
+  ]
+}

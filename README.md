@@ -1,11 +1,11 @@
 # AL Interpreter for Business Central (ALI)
 
-Write, check and run AL code **directly inside Business Central** — no VS Code, no publishing, no deployment. ALI is a complete AL compiler and interpreter written in pure AL (no .NET assembly, no external service). It installs like any other extension.
+Write and run AL code **directly inside Business Central** web client. ALI respect precisely native AL code behavious.
 
 Typical uses:
 
-- **Ad-hoc scripts and data fixes** — run a one-off correction on live data, with a simulation mode that rolls everything back.
-- **Investigation** — query tables, call existing codeunits, inspect results without leaving the web client.
+- **Ad-hoc scripts and data fixes** — run a one-off correction on live data.
+- **Investigation** — query tables, test AL concept, inspect results without leaving web client.
 - **AI-generated code** — let an AI assistant write and execute AL safely, with clear error feedback it can correct from.
 
 > This app was designed and mostly developed with Anthropic Claude (Fable 5.1 and Opus 5). Even with extended test coverage, error may happen. Alway test it on sandbox before running it on production environement.
@@ -13,40 +13,50 @@ Typical uses:
 ## Contents
 
 1. [Live code editor](#1-live-code-editor)
-2. [Supported features](#2-supported-features)
-3. [Calling ALI from AL](#3-calling-ali-from-al)
-4. [Architecture](#4-architecture)
-
----
+2. [Build & On-Premise vs Cloud](#2-Build-OnPremise-vs-Cloud)
+3. [Supported features](#3-supported-features)
+4. [Calling ALI from AL](#4-calling-ali-from-al)
+5. [Architecture](#5-architecture)
 
 ## 1. Live code editor
 
+Search for page "AL Script Editor" :
 <!-- SCREENSHOT 1: full editor page — code with syntax coloring on the left, Result pane with a successful run on the right. Best "hero" image, keep it wide. -->
+![Screenshot full code editor page](https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-Sample.png?raw=true)
 
-The **AL Script Editor** page brings a VS Code-like experience into the Business Central web client. 
+The **AL Script Editor** page brings a VS Code-like experience into the Business Central web client with collboration of JavaScript addin and AL metadata.
 Type AL, press **F5**, read the result. 
-Ctrl+F5 forces a recompile,
-Ctrl+S saves
+
+### Autocompletion
+
+Builtin methods, record field and functions, all are suggested while typing with a searchable dropdown list.
+
+<!-- SCREENSHOT 2 (optional): completion popup open on `Customer.` showing fields, or hover tooltip on a procedure. -->
+<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-AutoCompletion.png" alt="Screenshot-AutoCompletion" width="50%"/>
 
 ### Live syntax check
 
-<!-- SCREENSHOT 2: a script with 2–3 errors underlined, Problems panel open below showing the messages (one with a "did you mean" hint). -->
+<!-- SCREENSHOT 3 a script with 2–3 errors underlined, Problems panel open below showing the messages (one with a "did you mean" hint). -->
+![Screenshot syntax error](https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-Syntax-Error.png?raw=true)
 
 Code is checked **as you type**. 
 Errors are underlined in place and listed in the **Problems** panel. 
 Real semantic checks against your database — unknown tables, fields or procedures, wrong argument types, invalid `var` arguments — not just keyword coloring.
 
-<!-- SCREENSHOT 3 (optional): completion popup open on `Customer.` showing fields, or hover tooltip on a procedure. -->
 
 ### Multi-tab
 
-Several scripts can be open at once in tabs. New tab are scratch buffer; once you give it a name (click on tab name to edit) it becomes a stored script and is auto-saved. Stored scripts reopen from the script list.
+Several scripts can be open at once in tabs. 
+New tab are scratch buffer; once you give it a name (click on tab name to edit) it becomes a stored script and is auto-saved. Stored scripts reopen from the script list.
 
 <!-- SCREENSHOT 4: tab strip with 2–3 open scripts, one being renamed inline. -->
+<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-MultiTabs.png?raw=true" alt="Screenshot multi tab" width="50%"/>
 
 ### Compile & run options
 
 <!-- SCREENSHOT 5: the Options page (Compiler Options + Execution Options groups). -->
+<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-Compile-Options-dropdown.png?raw=true" alt="Screenshot-Compile-Options-dropdown" width="200"/>
+<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-Compile-Options.png?raw=true" alt="Screenshot-Compile-Options" width="75%"/>
 
 | Option | Default | Effect |
 |---|---|---|
@@ -65,11 +75,11 @@ The compiled script is cached with the stored script: an unchanged script re-run
 
 ### Preprocessor symbols
 
-<!-- SCREENSHOT 6: the Preprocessor Symbols page with one extension and a couple of symbols (e.g. CLEAN25). -->
+> On premise only. A cloud build cannot read published object AL source, so there is nothing for these symbols to apply to and the page is not shipped — see [Build flavors](#5-build-flavors-on-premise--cloud).
 
-When a script calls a procedure of an existing published object, ALI reads that object's AL source from the database and compiles it on the fly. If that source contains conditional compilation directives (`#if CLEAN25 ... #endif`, `#if not CLEAN24 ...`), ALI must know which symbols were defined when the extension was built. Business Central does not store this information — the `preprocessorSymbols` of the extension's `app.json` are not retrievable at runtime.
+When a script calls a procedure of an existing published object, ALI reads that object's AL source from the database and compiles it on the fly. If that source contains conditional compilation directives (`#if CLEAN25 ... #endif`, `#if not CLEAN24 ...`), ALI must know which symbols were defined when the extension was built.
 
-The **Preprocessor** toolbar button opens a page where you declare these symbols **per published extension**, once. ALI then compiles that extension's objects exactly as the AL compiler did. Objects of extensions with no entry are compiled with no symbol defined, which is the right answer for most extensions. `#define` / `#undef` inside a file are always honored on top of this set.
+The **Preprocessor** toolbar button opens a page where you declare these symbols **per published extension**. `#define` / `#undef` inside a file are always honored on top of this set.
 
 ### AI friendly
 
@@ -97,7 +107,59 @@ Sample :
 
 ---
 
-## 2. Supported features
+## 2. Build OnPremise vs Cloud
+
+### What a cloud build cannot do
+
+Everything the interpreter does on its own — lexing, parsing, binding, optimizing, lowering,
+running, the whole supported feature surface of [chapter 3](#3-supported-features) — is identical
+in both flavors. What differs is anything that has to read **the AL source of an already published
+object**, which lives on table `Application Object Metadata`. That table's scope is `OnPrem`: no
+cloud extension may reference it, and the platform offers no substitute on SaaS.
+
+| Feature | On premise | Cloud |
+|---|---|---|
+| Calls into existing objects (`Cust.MyProc()`, `MyCU.MyProc()`) | yes | no — reported as ALI961, naming the reason |
+| Member names / captions of a standalone **Enum object** | yes | no — the existing ALI987 gate; integer enum semantics still work |
+| Enum and option **fields** of a table | yes | yes — read through `FieldRef`, not through source |
+| Procedures of existing objects in the completion dropdown | yes | not offered (the compiler cannot resolve them either) |
+| Preprocessor Symbols page | yes | not shipped |
+| `GetLastErrorObject()` | yes | ALI982 at compile time |
+| `EnvironmentInformation.GetEnvironmentSetting()` | yes | ALI982 at compile time |
+
+`ALI982` cases are real AL methods whose own scope is `OnPrem`; they stay in the builtin
+catalogue in both flavors (so every `BuiltinId` — which serialized bytecode carries raw — is
+identical across builds) and are refused at bind time with the reason, rather than silently
+missing.
+
+### Build
+
+One source tree, built two ways. The flavor is chosen entirely in `app.json` — `target` plus two
+preprocessor symbols — and nothing else in the repository needs touching.
+
+| Symbol | Defined when | Effect |
+|---|---|---|
+| `CLOUD` | building for a cloud (SaaS / per-tenant) installation | Excludes everything that depends on OnPrem-scoped platform surface |
+| `TEST` | building a test run | Includes everything under [`Test/`](Test/) |
+
+`app.json` as committed is the **on-premise development** build: `"target": "OnPrem"` with
+`"preprocessorSymbols": ["TEST"]`, so F5 and the test runner work as before.
+
+| Flavor | `target` | `preprocessorSymbols` | `dependencies` |
+|---|---|---|---|
+| On premise, development | `OnPrem` | `["TEST"]` | Library Assert |
+| On premise, release | `OnPrem` | `[]` | *(empty)* |
+| Cloud, development | `Cloud` | `["CLOUD", "TEST"]` | Library Assert |
+| Cloud, release | `Cloud` | `["CLOUD"]` | *(empty)* |
+
+`TEST` exists so a public release ships without the test codeunits and therefore without the
+dependency on Microsoft's **Library Assert**, which is not installed by default. Drop `TEST` from
+`preprocessorSymbols` *and* empty `dependencies` together — the symbol removes the code, the
+manifest removes the requirement.
+
+---
+
+## 3. Supported features
 
 The interpreter respect native AL compiler (alc.exe) and runtime behavior of Busienss central. It translate written code to bytecode that run native AL statement as much as possible.
 
@@ -107,7 +169,7 @@ The interpreter respect native AL compiler (alc.exe) and runtime behavior of Bus
 
 Reference: [AL data types and methods](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/methods-auto/library).
 
-### 2.1 Data types
+### 3.1 Data types
 
 | Data type | Status | Notes |
 |---|---|---|
@@ -139,7 +201,7 @@ Reference: [AL data types and methods](https://learn.microsoft.com/en-us/dynamic
 | Page, Report, Query, XmlPort, Notification, TestPage variables | ❌ | static `Page.Run` / `Report.Run` ✅ |
 | IsolatedStorage, TaskScheduler, Session, NavApp, ModuleInfo, DataTransfer, FilterPageBuilder, NumberSequence, … | ❌ | |
 
-### 2.2 Statements & language
+### 3.2 Statements & language
 
 All ✅:
 
@@ -155,7 +217,7 @@ All ✅:
 - Preprocessor directives `#if` / `#elif` / `#else` / `#endif`, `#define` / `#undef`
 - `with` rejected (as with `NoImplicitWith`)
 
-### 2.3 Record methods
+### 3.3 Record methods
 
 All ✅ unless noted:
 
@@ -165,18 +227,18 @@ All ✅ unless noted:
 
 **Record security** (option): every table read is restricted to the records the user is allowed to see; the script cannot remove these filters.
 
-### 2.4 RecordRef / FieldRef / KeyRef
+### 3.4 RecordRef / FieldRef / KeyRef
 
 - **RecordRef** ✅ — `Open` (by id or by table name), `Close`, `Number`, `Name`, `Caption`, `GetTable`, `SetTable`, `Duplicate`, `Field` (by number or name), `FieldIndex`, `KeyIndex`, `FieldExist`, `System*No`, plus every Record method above and the field-number forms (`SetRange`, `SetFilter`, `Validate`, `CalcFields`, `SetLoadFields`, …).
 - **FieldRef** ✅ — `Value` (get/set), `Validate`, `SetRange`, `SetFilter`, `GetFilter`, `GetRangeMin/Max`, `CalcField`, `CalcSum`, `TestField`, `FieldError`, `Name`, `Number`, `Caption`, `Length`, `Active`, `Relation`, `Class`, `Type`, `OptionCaption`, `OptionMembers`, enum helpers, `IsOptimizedForTextSearch`, `Record`. `Value` on Blob / Media fields ❌.
 - **KeyRef** ✅ — `Active`, `FieldCount`, `FieldIndex`, `Record`.
 - Chaining works: `RRef.Field(3).Value := x`, `RRef.KeyIndex(1).FieldIndex(1).Name`.
 
-### 2.5 Text
+### 3.5 Text
 
 ✅ `CopyStr`, `StrLen`, `MaxStrLen`, `StrPos`, `StrSubstNo`, `Format`, `LowerCase`, `UpperCase`, `DelChr`, `ConvertStr`, `PadStr`, `IncStr`, `SelectStr`, `Evaluate`, `DelStr`, `InsStr`, `StrCheckSum`, and the instance methods `Contains`, `StartsWith`, `EndsWith`, `IndexOf`, `LastIndexOf`, `IndexOfAny`, `Replace`, `Split`, `Substring`, `ToLower`, `ToUpper`, `Trim`, `TrimStart`, `TrimEnd`, `PadLeft`, `PadRight`, `Remove`, `s[i]`.
 
-### 2.6 Collections & builders
+### 3.6 Collections & builders
 
 - **List** ✅ `Add`, `AddRange`, `Get`, `Set`, `Count`, `Contains`, `IndexOf`, `Insert`, `Remove`, `RemoveAt`, `RemoveRange`, `GetRange`, `Reverse` — ❌ `ToArray`
 - **Dictionary** ✅ `Add`, `Set`, `Get`, `ContainsKey`, `Remove`, `Count`, `Keys`, `Values`
@@ -185,17 +247,17 @@ All ✅ unless noted:
 - **SecretText** ✅ `IsEmpty`, `Unwrap`, `SecretStrSubstNo`
 - **Media / MediaSet** ✅ `MediaId`, `HasValue`, `ExportStream`, `Count`, `Item` — ❌ `ImportStream`, `Insert`, `Remove`
 
-### 2.7 Streams
+### 3.7 Streams
 
 ✅ `WriteText`, `WriteLine`, `ReadText`, `Write`, `Read` (typed binary I/O), `EOS`, `Length`, `Position`, `ResetPosition`, `CopyStream`.
 
-### 2.8 HTTP, JSON, XML
+### 3.8 HTTP, JSON, XML
 
 - **Http** ✅ `HttpClient` (`Get`, `Post`, `Put`, `Delete`, `Send`, `SetBaseAddress`, `Timeout`, `DefaultRequestHeaders`), `HttpRequestMessage`, `HttpResponseMessage`, `HttpContent`, `HttpHeaders`. Certificates / auth helpers ❌.
 - **Json** ✅ full `JsonObject` / `JsonArray` / `JsonToken` / `JsonValue` surface, typed getters included (`GetText`, `GetInteger`, `GetObject`, …), `SelectToken`, `Clone`, `Keys`. JsonArray stays 0-based like native.
 - **Xml** ✅ full documented surface of all 16 Xml types: create / read / write (text and streams), XPath `SelectNodes` / `SelectSingleNode` with namespaces, attributes, navigation.
 
-### 2.9 System functions
+### 3.9 System functions
 
 | ✅ | 🔶 | ❌ |
 |---|---|---|
@@ -203,7 +265,7 @@ All ✅ unless noted:
 
 `Message` / `Error` are captured in the run result; `Confirm` / `StrMenu` answers can be scripted.
 
-### 2.10 Native codeunits
+### 3.10 Native codeunits
 
 These system codeunits are called on the real object, so their DotNet-based implementation works:
 
@@ -220,7 +282,7 @@ These system codeunits are called on the real object, so their DotNet-based impl
 | Cryptography Management | hashing, keyed hashes, `SignData`, `VerifyData` |
 | Regex | `IsMatch`, `Match`, `Replace`, `Split`, `Escape`, groups & captures |
 
-### 2.11 Diagnostics
+### 3.11 Diagnostics
 
 - All errors reported at once, with line and column
 - Verbose mode: source line, caret and hint under each error; runtime errors explain 1-based vs 0-based indexes, missing dictionary keys, …
@@ -231,7 +293,7 @@ These system codeunits are called on the real object, so their DotNet-based impl
 
 ---
 
-## 3. Calling ALI from AL
+## 4. Calling ALI from AL
 
 For developers who want to embed ALI in their own extension: an AI tool, a job, a custom page.
 
@@ -502,7 +564,7 @@ The Script Editor page ([`ALCodeEditor/ALIScriptEditor.Page.al`](ALCodeEditor/AL
 
 ---
 
-## 4. Architecture
+## 5. Architecture
 
 ALI is a classic compiler pipeline followed by a register-based bytecode interpreter, all in AL. This section explains the general principles; the source is the detailed reference.
 
@@ -518,7 +580,7 @@ ALI is a classic compiler pipeline followed by a register-based bytecode interpr
 | [`StoredALScript/`](StoredALScript/) | `ALI Stored Script` table (source + stored bytecode) and list page |
 | [`Test/`](Test/) | Test codeunits per pipeline stage and test objects (tables, pages, events) |
 
-### 4.1 Compilation pipeline
+### 5.1 Compilation pipeline
 
 ```
 Source
@@ -535,19 +597,19 @@ Source
 - Execution runs **lowered bytecode, not the AST**: compile heavy, run fast.
 - Calls to real AL objects (codeunits, tables, events) are resolved by the [`ALI Object Registry`](Semantic/ALIObjectRegistry.Codeunit.al), which reads the object's source from the database and compiles it together with the script.
 
-### 4.2 Core representation: struct-of-arrays
+### 5.2 Core representation: struct-of-arrays
 
 AL has no heap objects or pointers, so every structure — tokens, AST nodes, symbols, instructions — is a set of **parallel arrays indexed by integer handles**. At compile time these are `List of [T]`; at run time they are fixed arrays, sealed when the Module is loaded. Enums such as `TokenKind`, `NodeKind` and `Opcode` are dense, append-only ordinals, which keeps serialized modules stable across versions.
 
-### 4.3 Lexer
+### 5.3 Lexer
 
 [`Frontend/ALILexer.Codeunit.al`](Frontend/ALILexer.Codeunit.al) — single-pass scanner producing a token table (`Kind`, `Pos`, `Len`, `Line`, `Col`, `ValueIdx`) with separate literal pools. Identifiers are interned case-insensitively to integer ids, so nothing after the lexer compares strings. Preprocessor directives are resolved here, using the symbols declared for the object's extension.
 
-### 4.4 Parser
+### 5.4 Parser
 
 [`Frontend/ALIParser.Codeunit.al`](Frontend/ALIParser.Codeunit.al) and companions — recursive descent producing a flat AST (each node: `Kind`, `Token`, `FirstChild`, `ChildCount`, `Extra`). Expressions use Pratt parsing with native AL precedence, including the if/else semicolon rule. Error recovery (token insertion + resync) lets the parser report several errors per pass. A nesting-depth guard prevents AL stack overflow.
 
-### 4.5 Binder
+### 5.5 Binder
 
 [`Semantic/ALIBinder.Codeunit.al`](Semantic/ALIBinder.Codeunit.al) — single pass over the AST resolving symbols, types, conversions and register slots. Type rules mirror the native operator matrix; a builtin registry describes the whole AL surface (with partial implementations reporting "not implemented"); metadata oracles resolve tables, fields and enums at bind time. The AST stays immutable: the binder writes parallel annotation columns (`TypeOrd`, `SymbolId`, `ConvOrd`, `SlotIndex`). After binding, **no type or name resolution happens at run time**.
 
@@ -555,15 +617,15 @@ Methods on built-in types (Record, RecordRef, Json, Xml, Http, List, …) are di
 
 Events need no runtime machinery: when an object is read from the database, each event publisher's empty body is rewritten into direct calls to its active subscribers, so raising an event is an ordinary procedure call.
 
-### 4.6 Optimizer (optional)
+### 5.6 Optimizer (optional)
 
 [`Semantic/Optimizer/`](Semantic/Optimizer/) — AST-to-AST passes selected through an enum + interface: constant folding, constant propagation, dead-branch elimination. Enabled with `SetOptimize(true)`.
 
-### 4.7 Lowerer and module
+### 5.7 Lowerer and module
 
 [`Runtime/ALILowerer.Codeunit.al`](Runtime/ALILowerer.Codeunit.al), [`Runtime/ALIModule.Codeunit.al`](Runtime/ALIModule.Codeunit.al) — transform the AST into register-based bytecode. The Module holds instruction columns (`Op, A, B, C`), typed constant pools, a procedure table, an operand pool for variadic operations and a debug map (PC → source line/column) used for runtime error positions.
 
-### 4.8 Interpreter
+### 5.8 Interpreter
 
 [`Runtime/ALIInterpreter.Codeunit.al`](Runtime/ALIInterpreter.Codeunit.al), delegating to `Runtime/ALI*Runtime.Codeunit.al` per family.
 
@@ -572,7 +634,7 @@ Events need no runtime machinery: when an object is read from the database, each
 - **Transaction scope**: a run is a conditional `Codeunit.Run` on the interpreter itself, the only AL construct that gives it its own rollback scope. In Simulation mode the loop runs with commits ignored and a clean run ends with a sentinel error that forces the rollback, then reports success.
 - `[TryFunction]` calls re-enter the execution loop natively from a try function, so a failing callee unwinds only its own frames and the script's `GetLastErrorText` is set.
 
-### 4.9 Performance model
+### 5.9 Performance model
 
 - Everything is an integer after lexing: ids, slots, types, opcodes. No string comparison in the hot path.
 - No dynamic allocation while running; all state is pre-sized when the Module is loaded.
@@ -580,7 +642,7 @@ Events need no runtime machinery: when an object is read from the database, each
 - **Hot opcodes are inlined in the execution loop.** An AL procedure call costs far more than the work it usually wraps, so the most frequent operations live directly in the loop instead of helper procedures. This brought the ratio from about ×30 to about ×11 vs native, at the price of a large and deliberately ugly main loop.
 - Room is left: inlining everything and merging all runtime codeunits into one would come closer still to native speed. Not done on purpose — it would be tens of thousands of lines in a single unmaintainable codeunit.
 
-### 4.10 Guarantees
+### 5.10 Guarantees
 
 - Near-native AL semantics on the supported surface
 - Deterministic diagnostics: every error reported at once, never just the first

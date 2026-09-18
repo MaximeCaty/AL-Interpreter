@@ -1,0 +1,9 @@
+.alpackages/*
+/.alpackages
+/.alpackages/*
+launch.json
+rad.json
+settings.json
+*.xlf
+*.app
+*.zip

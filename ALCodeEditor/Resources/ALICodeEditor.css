@@ -1,0 +1,724 @@
+html, body, #controlAddIn {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #1e1e1e;
+}
+
+/* Column: optional status strip on top, editor takes whatever is left. */
+#controlAddIn {
+  display: flex;
+  flex-direction: column;
+}
+
+.ali-editor {
+  position: relative;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+/* Compile-status strip. Deliberately OUTSIDE .ali-editor: every overlay inside the editor
+   (highlight, squiggles, suggest box, tooltips) is absolutely positioned against that box,
+   so leaving that box untouched keeps all the caret/line coordinate math unchanged.
+   Shown only when AL language is on, i.e. on the source pane, not on the result viewer. */
+.ali-status {
+  display: none;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  background: #21435b;
+  color: #ffffff;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  line-height: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+  user-select: none;
+}
+
+.ali-status.ali-status-on { display: flex; }
+
+/* VS Code paints the whole status bar, so the compile outcome is the bar color, not the text
+   color: the default blue for idle/compiling/succeeded, the error red when the compile failed. */
+.ali-status-fail { background: #9f250c; }
+
+/* CSS spinner rather than an animated gif — no extra resource to ship with the add-in. */
+.ali-spin {
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: ali-spin 0.8s linear infinite;
+}
+
+@keyframes ali-spin { to { transform: rotate(360deg); } }
+
+.ali-gutter {
+  margin: 0;
+  padding: 10px 8px 10px 0;
+  border: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;
+  height: 100%;
+  box-sizing: border-box;
+  font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+  font-size: 16px;
+  line-height: 22px;
+  text-align: right;
+  color: #6e7681;
+  background: #1e1e1e;
+  overflow: hidden;
+  white-space: pre;
+  user-select: none;
+  z-index: 1;
+}
+
+.ali-editor > pre,
+.ali-editor > textarea {
+  margin: 0;
+  padding: 10px 12px;
+  border: 0;
+  position: absolute;
+  top: 0;
+  left: 44px;
+  right: 0;
+  height: 100%;
+  box-sizing: border-box;
+  font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+  font-size: 16px;
+  line-height: 22px;
+  white-space: pre;
+  word-wrap: normal;
+  overflow: auto;
+  tab-size: 4;
+}
+
+.ali-editor > pre {
+  color: #d4d4d4;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── Scrollbars: VS Code look ──────────────────────────────────────────────
+   No track, no arrows, square translucent thumb overlaying the content, darker
+   on hover. Firefox gets the closest thing it exposes (thin + thumb/track colors). */
+* {
+  scrollbar-width: auto;
+  scrollbar-color: rgba(121, 121, 121, 0.4) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 32px;
+  height: 20px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(121, 121, 121, 0.4);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover  { background: rgba(100, 100, 100, 0.7); }
+::-webkit-scrollbar-thumb:active { background: rgba(191, 191, 191, 0.4); }
+
+/* The stacked <pre> layers keep their own scrollbars only to reserve the same space as the
+   textarea (see ali-errors below); their thumbs must not paint, or a translucent thumb would
+   show through the textarea's and read twice as dark. */
+.ali-editor > pre::-webkit-scrollbar-thumb,
+.ali-editor > pre::-webkit-scrollbar-thumb:hover,
+.ali-editor > pre::-webkit-scrollbar-thumb:active {
+  background: transparent;
+}
+
+.ali-editor > pre { scrollbar-color: transparent transparent; }
+
+/* Same box as the highlight pre; text invisible, only the wavy decorations paint.
+   overflow stays `auto` (inherited from the shared pre/textarea rule above) rather than
+   `hidden`: same content + same font means it reserves the same horizontal-scrollbar space
+   as the textarea, so clientHeight matches and a synced scrollTop lands on the same line.
+   Its own scrollbar, if drawn, sits exactly under the textarea's real one (pointer-events:
+   none, same box) so it's never visibly doubled. */
+.ali-editor pre.ali-errors {
+  color: transparent;
+  background: transparent;
+  z-index: 2;
+}
+
+.ali-err,
+.ali-err-warn {
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-skip-ink: none;
+  text-underline-offset: 3px;
+}
+
+.ali-err      { text-decoration-color: #f14c4c; }
+.ali-err-warn { text-decoration-color: #cca700; }
+
+.ali-errtip {
+  position: absolute;
+  z-index: 11;
+  display: none;
+  max-width: 60%;
+  padding: 6px 10px;
+  background: #252526;
+  border: 1px solid #454545;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  color: #f48771;
+  font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 18px;
+  white-space: pre-wrap;
+  pointer-events: none;
+}
+
+.ali-editor > textarea {
+  z-index: 3;
+  background: transparent;
+  color: transparent;
+  caret-color: #ffffff;
+  resize: none;
+  outline: none;
+  -webkit-text-fill-color: transparent;
+}
+
+.ali-editor textarea::selection {
+  background: rgba(100, 150, 255, 0.4);
+  color: transparent;
+}
+
+.ali-editor textarea.ali-readonly {
+  caret-color: transparent;
+}
+
+.ali-editor pre.ali-mirror {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: auto;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: inline-block;
+  visibility: hidden;
+  pointer-events: none;
+  overflow: visible;
+  white-space: pre;
+  font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+  font-size: 16px;
+  line-height: 22px;
+  tab-size: 4;
+}
+
+.ali-suggest {
+  position: absolute;
+  z-index: 10;
+  display: none;
+  min-width: 180px;
+  background: #252526;
+  border: 1px solid #454545;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+  font-size: 14px;
+  user-select: none;
+}
+
+/* Scroll lives on the inner list so the search box stays pinned on top. */
+.ali-suggest .ali-suggest-list {
+  max-height: 178px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.ali-suggest .ali-suggest-list div {
+  padding: 3px 12px;
+  line-height: 16px;
+  color: #4ec9b0;
+  cursor: pointer;
+  white-space: pre;
+}
+
+.ali-suggest .ali-suggest-list div.ali-suggest-sel {
+  background: #094771;
+  color: #ffffff;
+}
+
+.ali-suggest-search,
+.ali-hover-search {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 3px 8px;
+  border: 0;
+  border-bottom: 1px solid #454545;
+  background: #3c3c3c;
+  color: #d4d4d4;
+  font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+  font-size: 13px;
+  outline: none;
+}
+
+.ali-hover-search {
+  margin-bottom: 4px;
+}
+
+/* Kind icon at the left of a suggestion row (VS Code palette): method/builtin purple,
+   record field and variable blue, data type teal, table name orange. Fixed 3ch so the
+   one-glyph icons line up with the bracketed variable one. */
+.ali-suggest-ico {
+  display: inline-block;
+  width: 3ch;
+  margin-right: 6px;
+  text-align: center;
+}
+
+.ali-ico-m { color: #b180d7; }
+.ali-ico-f { color: #75beff; }
+.ali-ico-v { color: #75beff; }
+.ali-ico-t { color: #4ec9b0; }
+.ali-ico-b { color: #ee9d28; }
+.ali-ico-c { color: #dcdcaa; }
+.ali-ico-e { color: #ee9d28; font-weight: bold; }
+
+/* Right-aligned grey detail (result type / field type) inside a suggestion row. */
+.ali-suggest-detail {
+  float: right;
+  margin-left: 18px;
+  color: #8a8a8a;
+  font-size: 12px;
+}
+
+/* Record-variable hover: VS Code-style field list (Name | Type[Len] (PK)). */
+.ali-hovertip {
+  position: absolute;
+  z-index: 11;
+  display: none;
+  max-width: 70%;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 6px 10px;
+  background: #252526;
+  border: 1px solid #454545;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  color: #d4d4d4;
+  font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.ali-hovertip .ali-hover-head {
+  color: #4ec9b0;
+  font-weight: 600;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #454545;
+  margin-bottom: 4px;
+}
+
+.ali-hovertip table {
+  border-collapse: collapse;
+}
+
+.ali-hovertip td {
+  padding: 1px 6px 1px 0;
+  white-space: nowrap;
+}
+
+.ali-hovertip td + td {
+  color: #8a8a8a;
+}
+
+.ali-tok-kw   { color: #569cd6; font-weight: 600; }
+.ali-tok-type { color: #4ec9b0; }
+.ali-tok-str  { color: #ce9178; }
+.ali-tok-num  { color: #b5cea8; }
+.ali-tok-cmt  { color: #6a9955; font-style: italic; }
+.ali-tok-var  { color: #9cdcfe; }                     /* declared variables/parameters */
+.ali-tok-fn   { color: #dcdcaa; }                     /* procedures + method/function calls */
+
+/* Result pane lines: one class per "ALI Out Style" value name, set from AL (see
+   ALICodeEditor_parseOut). A new enum value needs its rule here. Color and decoration only —
+   anything that changes glyph width would slide the paint off the textarea's text above it. */
+.ali-out-error   { color: #f48771; }
+.ali-out-warning { color: #cca700; }
+.ali-out-info    { color: #75beff; }
+.ali-out-dim     { color: #808080; }
+.ali-out-header  { color: #c586c0; }
+.ali-out-ok      { color: #89d185; }
+.ali-out-link {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+/* ── Minimap ───────────────────────────────────────────────────────────────
+   The highlight layer's markup a second time at 1/8 scale, pinned to the right edge, with a
+   translucent box marking the visible viewport. Toggled by ALICodeEditor_updateMinimap()
+   (source pane, > 10 lines, pane at least 400px wide), which adds .ali-has-minimap and pulls
+   the text layers in by exactly this strip's width. */
+.ali-minimap {
+  display: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 110px;   /* keep in sync with ALICodeEditor_MINIMAP_WIDTH */
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #1e1e1e;
+  border-left: 1px solid #2b2b2b;
+  z-index: 4;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ali-editor.ali-has-minimap .ali-minimap { display: block; }
+
+.ali-editor.ali-has-minimap > pre:not(.ali-mirror),
+.ali-editor.ali-has-minimap > textarea { right: 110px; }
+
+/* Same font metrics as the editor, then scaled down as a whole — so the map is the real
+   layout, not an approximation of it. Width 800% = 110px / 0.125, i.e. the full code width. */
+.ali-minimap pre {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 10px 12px;
+  width: 800%;
+  box-sizing: border-box;
+  transform: scale(0.125);   /* keep in sync with ALICodeEditor_MINIMAP_SCALE */
+  transform-origin: top left;
+  color: #d4d4d4;
+  font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+  font-size: 16px;
+  line-height: 22px;
+  white-space: pre;
+  tab-size: 4;
+  pointer-events: none;
+}
+
+.ali-minimap-slider {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgba(121, 121, 121, 0.2);
+  pointer-events: none;
+}
+
+.ali-minimap:hover .ali-minimap-slider { background: rgba(121, 121, 121, 0.35); }
+
+/* ── Add-in chrome: VS Code-style toolbar + tab strip ──────────────────────────────────────
+   Both sit OUTSIDE .ali-editor for the same reason as the status strip above: the overlays
+   inside that box are absolutely positioned against it, so its geometry must stay untouched.
+   Both are hidden until SetALLanguage(true) adds .ali-on, which keeps them off the read-only
+   Result pane. Colors are VS Code Dark+ (#3c3c3c title bar, #252526 tab bar, #1e1e1e editor,
+   #0078d4 accent); the UI font is the shell font, not the editor's monospace. */
+.ali-toolbar {
+  display: none;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  background: #3c3c3c;
+  border-bottom: 1px solid #2b2b2b;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 13.5px;
+  color: #cccccc;
+  user-select: none;
+}
+
+.ali-toolbar.ali-on { display: flex; }
+
+.ali-tb-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ali-tb-btn:hover { background: rgba(255, 255, 255, 0.1); }
+.ali-tb-btn-open  { background: rgba(255, 255, 255, 0.16); }
+
+.ali-tb-caret { font-size: 10px; opacity: 0.8; }
+
+/* Run triangle = exec mode: green in Simulation (writes rolled back), red in Normal (writes
+   committed) — set by ALICodeEditor_applyRunMode. */
+.ali-tb-play  { color: #89d185; font-size: 12px; }
+.ali-tb-run:hover .ali-tb-play { color: #a6e3a1; }
+.ali-tb-run-normal .ali-tb-play,
+.ali-tb-run-normal:hover .ali-tb-play { color: #f14c4c; }
+
+.ali-tb-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 12px;
+  background: #5a5a5a;
+}
+
+/* Run is a split button: the left half runs, the caret half opens the run settings. They read
+   as one control (shared hover ground, hairline divider) but each half highlights on its own. */
+.ali-tb-split {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  border-radius: 4px;
+}
+
+.ali-tb-split:hover { background: rgba(255, 255, 255, 0.06); }
+
+.ali-tb-split .ali-tb-run {
+  border-radius: 4px 0 0 4px;
+  padding-right: 6px;
+}
+
+.ali-tb-more {
+  padding: 0 8px;
+  border-radius: 0 4px 4px 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+/* Dropdowns are appended to <body> and positioned from getBoundingClientRect, i.e. in viewport
+   coordinates — hence fixed, not absolute. */
+.ali-menu {
+  position: fixed;
+  z-index: 40;
+  min-width: 190px;
+  padding: 4px 0;
+  background: #252526;
+  border: 1px solid #454545;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.36);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  color: #cccccc;
+  user-select: none;
+}
+
+.ali-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 28px;
+  padding: 0 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ali-menu-item:hover { background: #0078d4; color: #ffffff; }
+
+/* Fixed-width glyph column, so labels line up whether a row has an icon or not. */
+.ali-menu-ico   { flex: 0 0 16px; text-align: center; font-size: 14px; opacity: 0.9; }
+.ali-menu-label { flex: 1 1 auto; margin-right: 14px; }
+.ali-menu-key   { color: #8d8d8d; font-size: 11px; }
+.ali-menu-item:hover .ali-menu-key { color: #e4e4e4; }
+
+/* Business Central-style boolean switch: oval track, the dot slides left -> right when on. */
+.ali-switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid #8d8d8d;
+  border-radius: 8px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.ali-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #cccccc;
+  transition: left 0.15s, background 0.15s;
+}
+
+.ali-switch-on { background: #0078d4; border-color: #0078d4; }
+.ali-switch-on::after { left: 16px; background: #ffffff; }
+.ali-menu-item:hover .ali-switch { border-color: #ffffff; }
+.ali-menu-item:hover .ali-switch-on { background: #ffffff; }
+.ali-menu-item:hover .ali-switch-on::after { background: #0078d4; }
+
+.ali-menu-sep {
+  height: 1px;
+  margin: 4px 0;
+  background: #454545;
+}
+
+.ali-tabs {
+  display: none;
+  flex: 0 0 auto;
+  align-items: stretch;
+  height: 35px;
+  background: #252526;
+  /* Many open scripts scroll sideways rather than wrapping: the add-in can be as narrow as
+     MinimumWidth = 400, and a wrapped tab row would eat the editor's height. */
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: thin;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  user-select: none;
+}
+
+.ali-tabs.ali-on { display: flex; }
+
+.ali-tabs::-webkit-scrollbar { height: 3px; }
+.ali-tabs::-webkit-scrollbar-thumb { background: rgba(121, 121, 121, 0.4); }
+
+.ali-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  max-width: 220px;
+  padding: 0 6px 0 12px;
+  box-sizing: border-box;
+  background: #2d2d2d;
+  color: #8f8f8f;
+  border-right: 1px solid #252526;
+  cursor: pointer;
+}
+
+.ali-tab:hover { color: #cccccc; }
+
+/* Active tab merges into the editor below it and carries the accent line on top, as in VS Code. */
+.ali-tab-active { background: #1e1e1e; color: #ffffff; }
+
+.ali-tab-active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #0078d4;
+}
+
+.ali-tab-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Close cross: only on hover or on the active tab, so the strip stays quiet. */
+.ali-tab-x {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  font-size: 11px;
+  color: inherit;
+  opacity: 0;
+}
+
+.ali-tab:hover .ali-tab-x,
+.ali-tab-active .ali-tab-x { opacity: 1; }
+.ali-tab-x:hover { background: rgba(255, 255, 255, 0.14); }
+
+.ali-tab-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  background: #252526;
+  color: #cccccc;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.ali-tab-add:hover { background: rgba(255, 255, 255, 0.1); }
+
+/* Result pane panel strip (Output / Problems), VS Code panel header. Off until the first
+   ShowPanel adds .ali-on, so the source pane never shows it. */
+.ali-panels {
+  display: none;
+  flex: 0 0 auto;
+  align-items: stretch;
+  gap: 4px;
+  height: 32px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  background: #1e1e1e;
+  border-bottom: 1px solid #2b2b2b;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.ali-panels.ali-on { display: flex; }
+
+.ali-panel-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  color: #8f8f8f;
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+}
+
+.ali-panel-tab:hover { color: #cccccc; }
+.ali-panel-active { color: #e7e7e7; border-bottom-color: #e7e7e7; }
+
+.ali-panel-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 9px;
+  background: #4d4d4d;
+  color: #ffffff;
+  font-size: 10.5px;
+  line-height: 18px;
+  text-align: center;
+  letter-spacing: 0;
+}
+
+.ali-panel-badge-err { background: #9f250c; }
+
+/* Inline rename box: replaces the label in place, so no dialog page is needed to name a script. */
+.ali-tab-input {
+  width: 130px;
+  padding: 1px 4px;
+  box-sizing: border-box;
+  background: #3c3c3c;
+  border: 1px solid #0078d4;
+  border-radius: 2px;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+}
