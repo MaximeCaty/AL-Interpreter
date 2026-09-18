@@ -32,7 +32,7 @@ Type AL, press **F5**, read the result.
 Builtin methods, record field and functions, all are suggested while typing with a searchable dropdown list.
 
 <!-- SCREENSHOT 2 (optional): completion popup open on `Customer.` showing fields, or hover tooltip on a procedure. -->
-![Screenshot intellisense](https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-AutoCompletion.png)
+<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-AutoCompletion.png" alt="Screenshot-AutoCompletion" width="50%"/>
 
 ### Live syntax check
 
@@ -50,13 +50,13 @@ Several scripts can be open at once in tabs.
 New tab are scratch buffer; once you give it a name (click on tab name to edit) it becomes a stored script and is auto-saved. Stored scripts reopen from the script list.
 
 <!-- SCREENSHOT 4: tab strip with 2–3 open scripts, one being renamed inline. -->
-![Screenshot multi tab](https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-MultiTabs.png?raw=true)
+<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-MultiTabs.png?raw=true" alt="Screenshot multi tab" width="50%"/>
 
 ### Compile & run options
 
 <!-- SCREENSHOT 5: the Options page (Compiler Options + Execution Options groups). -->
-![Screenshot compile and run DropDown](https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-Compile-Options-dropdown.png?raw=true)
-![Screenshot compile and run options](https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-Compile-Options.png?raw=true)
+<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-Compile-Options-dropdown.png?raw=true" alt="Screenshot-Compile-Options-dropdown" width="200"/>
+<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-Compile-Options.png?raw=true" alt="Screenshot-Compile-Options" width="75%"/>
 
 | Option | Default | Effect |
 |---|---|---|
