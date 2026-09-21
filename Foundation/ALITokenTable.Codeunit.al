@@ -3,7 +3,7 @@
 // Parser/binder compare identifiers by POOL INDEX (integer compare), never by string
 // (interning is load-bearing, §4.1). Identifiers case-insensitive -> intern keyed on
 // UPPERCASE spelling; original spelling kept in the pool for diagnostics.
-codeunit 51018 "ALI Token Table"
+codeunit 51104 "ALI Token Table"
 {
     Access = Public;
     SingleInstance = false;

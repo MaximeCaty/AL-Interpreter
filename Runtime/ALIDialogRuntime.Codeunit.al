@@ -13,7 +13,7 @@
 // Open rewrites `@N@@@@` -> `#N####` (a text field of the same width) and remembers N as a
 // progress field; Update(N, value) then renders a fixed 24-cell ASCII bar. The value must be a
 // numeric 0..1 fraction (a value > 1 is read as a 0..100 percentage).
-codeunit 51070 "ALI Dialog Runtime"
+codeunit 51143 "ALI Dialog Runtime"
 {
     Access = Public;
     SingleInstance = true;

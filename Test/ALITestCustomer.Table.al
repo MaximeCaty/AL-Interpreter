@@ -9,7 +9,7 @@
 // tests exercise CRUD, filters, FindSet/Next iteration and typed field access against this
 // table using the native-comparison trick (run the same logic through a native Record and
 // compare). Fields span the primitive register classes the field opcodes cover.
-table 51018 "ALI Test Customer"
+table 51102 "ALI Test Customer"
 {
     Caption = 'ALI Test Customer';
     DataClassification = CustomerContent;

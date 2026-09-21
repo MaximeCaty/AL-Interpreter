@@ -2,7 +2,7 @@
 // FROZEN SERIALIZATION CONTRACT (§10): explicit dense ordinals from 0, append-only.
 // Register-class mapping (§7.1) keys off these; RefShim types (§19.5/§19.7) use handle
 // tables. ObjectId (§19.6) is a plain Int subtype stored as Int.
-enum 51013 "ALI TypeKind"
+enum 51109 "ALI TypeKind"
 {
     Extensible = false;
 

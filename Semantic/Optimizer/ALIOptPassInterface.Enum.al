@@ -2,7 +2,7 @@
 // value binds to an "ALI Opt Pass" implementation; "ALI Pass Manager" runs an ordered list of
 // these values. Add a pass = add a value + implement the interface (suite extensibility idiom).
 // FROZEN SERIALIZATION CONTRACT (§10): explicit dense ordinals from 0, append-only.
-enum 51018 "ALI Opt Pass Interface" implements "ALI Opt Pass"
+enum 51114 "ALI Opt Pass Interface" implements "ALI Opt Pass"
 {
     Extensible = true;
 

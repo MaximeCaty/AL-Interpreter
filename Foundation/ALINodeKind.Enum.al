@@ -2,7 +2,7 @@
 // FROZEN SERIALIZATION CONTRACT (§10): explicit dense ordinals from 0, append-only.
 // Child-order per kind is a hard contract shared by parser/binder/lowerer (§5.5) —
 // this enum only names the kinds; the child order lives in §5.5, not here.
-enum 51007 "ALI NodeKind"
+enum 51103 "ALI NodeKind"
 {
     Extensible = false;
 

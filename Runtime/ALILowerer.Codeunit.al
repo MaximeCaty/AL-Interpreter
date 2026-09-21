@@ -29,7 +29,7 @@
 //
 // For-loop fidelity (§5.3, pitfall 17): bounds evaluated ONCE; FOR_NEXT tests before
 // incrementing. Non-short-circuit (§15 pitfall 2): and/or/xor lower BOTH operands.
-codeunit 51032 "ALI Lowerer"
+codeunit 51113 "ALI Lowerer"
 {
     Access = Public;
     SingleInstance = false;

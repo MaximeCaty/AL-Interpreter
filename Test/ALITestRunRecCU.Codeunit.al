@@ -9,7 +9,7 @@
 // 'RecordRef' to 'var Table'"), so the interpreter hands it over as a Variant instead. Whether
 // the platform then presents that Variant to OnRun as the right row is not something ALI can
 // decide — this codeunit writes the row, and T85 reads it back from the database.
-codeunit 51109 "ALI Test Run Rec CU"
+codeunit 51155 "ALI Test Run Rec CU"
 {
     TableNo = "ALI Test Customer";
 

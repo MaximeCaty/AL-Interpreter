@@ -14,7 +14,7 @@
 // per-table field cache keyed on (tableId, fieldNameId) -> packed (fieldNo, TypeOrd,
 // length, class). Isolated so tests can stub it (§6.3) and a future harvested-object
 // feature can extend it.
-codeunit 51040 "ALI Rec Meta"
+codeunit 51121 "ALI Rec Meta"
 {
     Access = Public;
     SingleInstance = false;

@@ -17,7 +17,7 @@
 // never a climbing operator here.
 //
 // All binaries are left-associative: parse RHS with minPower = thisPower + 1.
-codeunit 51023 "ALI Parser Expr"
+codeunit 51109 "ALI Parser Expr"
 {
     Access = Public;
     SingleInstance = false;

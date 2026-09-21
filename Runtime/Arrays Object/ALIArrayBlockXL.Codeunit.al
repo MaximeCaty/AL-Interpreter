@@ -2,7 +2,7 @@
 // per instance (~24MB). Identical to "ALI Array Block S" except Cells size and Cap().
 // Instantiated ONLY when a >10000-element array is allocated (runtime picks the tier), so the
 // 24MB is never reserved by smaller arrays.
-codeunit 51069 "ALI Array Block XL" implements "ALI Array Block"
+codeunit 51142 "ALI Array Block XL" implements "ALI Array Block"
 {
     Access = Public;
 

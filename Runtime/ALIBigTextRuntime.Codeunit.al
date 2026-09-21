@@ -11,7 +11,7 @@
 // Every mutating operation reads its slot, mutates, and writes it BACK with Bank.Set. That is
 // redundant if BigText is a reference type and required if it is a value type — doing it
 // unconditionally makes the bank correct either way, at the cost of one list write.
-codeunit 51102 "ALI BigText Runtime"
+codeunit 51153 "ALI BigText Runtime"
 {
     Access = Public;
     SingleInstance = true;

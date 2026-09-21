@@ -1,7 +1,7 @@
 // ALI Builtin Domain — dispatch domain of a builtin row in "ALI Builtin Registry".
 // Ordinals are the values previously returned by DomainStr()/DomainMath()/... — kept
 // identical so stored signature tables and the interpreter's dispatch case stay compatible.
-enum 51104 "ALI Builtin Domain"
+enum 51119 "ALI Builtin Domain"
 {
     Extensible = false;
 

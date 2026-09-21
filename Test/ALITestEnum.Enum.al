@@ -7,7 +7,7 @@
 // as a local `Enum "ALI Test Enum"` variable / bare `"ALI Test Enum"::Member` literal (AL
 // source-parse path via page 51017). Gapped ordinals + a Caption <> Name member are
 // deliberate — dictionaries only, never index by position (§ risk flag).
-enum 51014 "ALI Test Enum"
+enum 51110 "ALI Test Enum"
 {
     Extensible = true;
 

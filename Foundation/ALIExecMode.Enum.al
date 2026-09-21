@@ -1,6 +1,6 @@
 // ALI Exec Mode — execution mode per §8. Both stop at first runtime error.
 // FROZEN SERIALIZATION CONTRACT (§10): explicit dense ordinals from 0, append-only.
-enum 51004 "ALI Exec Mode"
+enum 51101 "ALI Exec Mode"
 {
     Extensible = false;
 

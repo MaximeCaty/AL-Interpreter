@@ -4,7 +4,7 @@
 #if TEST
 // ALI Test Event Manual Sub — a MANUAL subscriber to OnTrace. It only runs once bound with
 // BindSubscription, which the interpreter does not model, so it must never run there.
-codeunit 51115 "ALI Test Event Manual Sub"
+codeunit 51158 "ALI Test Event Manual Sub"
 {
     EventSubscriberInstance = Manual;
 

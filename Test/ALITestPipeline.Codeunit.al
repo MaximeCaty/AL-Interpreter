@@ -18,7 +18,7 @@
 // Source convention: callers pass a bare AL statement block (form 0) OR a single
 // `procedure` (form 1). ParseCompilationUnit classifies automatically; a bare block with a
 // leading `exit(expr)` infers the result type/slot so typed getters work (§ binder BindExit).
-codeunit 51055 "ALI Test Pipeline"
+codeunit 51133 "ALI Test Pipeline"
 {
     Access = Public;
     SingleInstance = false;

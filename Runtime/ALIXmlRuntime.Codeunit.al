@@ -17,7 +17,7 @@
 // XmlReadOptions/XmlWriteOptions/XmlNamespaceManager/XmlAttributeCollection mutators do
 // Get → mutate → Set back into the bank slot (value-copy belt-and-suspenders, mirrors the
 // Json SetTok write-back note).
-codeunit 51086 "ALI Xml Runtime"
+codeunit 51150 "ALI Xml Runtime"
 {
     Access = Public;
     SingleInstance = true;

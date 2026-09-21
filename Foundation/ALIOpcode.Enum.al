@@ -50,7 +50,7 @@
 //   _I Integer file (Integer/Char/Byte/Option)   _BIG BigInteger   _D Decimal
 //   _B Boolean   _T Text (Text/Code/Label)       _DATE/_TIME/_DT/_DUR temporal files
 //   _G Guid      _V Variant
-enum 51009 "ALI Opcode"
+enum 51105 "ALI Opcode"
 {
     Extensible = false;
 

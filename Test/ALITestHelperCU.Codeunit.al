@@ -12,7 +12,7 @@
 // table. The OnRun trigger is deliberately present — the harvester must skip it (T67). Phase C3's
 // `Codeunit.Run` reaches OnRun anyway, natively; its own fixtures are "ALI Test Run CU" /
 // "ALI Test Run Rec CU", which exist to be EXECUTED rather than harvested.
-codeunit 51016 "ALI Test Helper CU"
+codeunit 51102 "ALI Test Helper CU"
 {
     var
         CallCount: Integer;

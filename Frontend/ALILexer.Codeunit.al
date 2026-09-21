@@ -15,7 +15,7 @@
 // an identifier (`IsIdentifierLike`). The lexer does no context resolution.
 //
 // No state survives between Tokenize() calls; the keyword map is built lazily once.
-codeunit 51020 "ALI Lexer"
+codeunit 51106 "ALI Lexer"
 {
     Access = Public;
     SingleInstance = false;

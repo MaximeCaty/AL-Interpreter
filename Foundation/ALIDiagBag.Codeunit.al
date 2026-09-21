@@ -5,7 +5,7 @@
 // (binary search) so only the lexer tracks lines (§4.3).
 // Mirror Microsoft codes/messages where a counterpart exists (AL0118, AL0132, ...);
 // engine-specific conditions use the reserved ALI9xx range (§4.3).
-codeunit 51008 "ALI Diag Bag"
+codeunit 51101 "ALI Diag Bag"
 {
     Access = Public;
     SingleInstance = false;   // constructed per-pipeline so tests stay isolated (§3.5)

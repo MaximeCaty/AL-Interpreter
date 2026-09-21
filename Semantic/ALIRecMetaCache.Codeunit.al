@@ -11,7 +11,7 @@
 // ONCE per session instead of on every compile. "ALI Rec Meta" delegates its two resolver
 // entry points here; per-compile work then collapses to re-interning the cached field NAMES
 // into the current pool (in-memory, cheap), with no server round trip.
-codeunit 51100 "ALI Rec Meta Cache"
+codeunit 51151 "ALI Rec Meta Cache"
 {
     Access = Public;
     SingleInstance = true;

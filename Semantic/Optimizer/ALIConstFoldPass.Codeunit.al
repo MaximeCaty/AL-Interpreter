@@ -17,7 +17,7 @@
 // Everything else is left untouched (always safe). Because AL has no short-circuit evaluation,
 // folding is only attempted when BOTH operands are constants — never dropping an operand's work.
 // Text/date/time comparisons are skipped (collation/casing belongs to the runtime).
-codeunit 51047 "ALI Const Fold Pass" implements "ALI Opt Pass"
+codeunit 51127 "ALI Const Fold Pass" implements "ALI Opt Pass"
 {
     Access = Public;
     SingleInstance = false;

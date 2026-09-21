@@ -3,7 +3,7 @@
 // List-built compile columns into fixed arrays at load/link time. Overflow of any
 // of these produces a clean "program too large / call stack too deep" diagnostic.
 // Tuned with benchmarks (§16 M4) — change here only; ordinals/format unaffected.
-codeunit 51017 "ALI Limits"
+codeunit 51103 "ALI Limits"
 {
     Access = Public;
 

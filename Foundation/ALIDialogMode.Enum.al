@@ -3,7 +3,7 @@
 // options). Note: a first-class Window/Dialog progress-bar type is separate future work; this
 // knob controls the GuiAllowed gate those scripts already use.
 // FROZEN SERIALIZATION CONTRACT (§10): explicit dense ordinals from 0, append-only.
-enum 51015 "ALI Dialog Mode"
+enum 51111 "ALI Dialog Mode"
 {
     Extensible = false;
 

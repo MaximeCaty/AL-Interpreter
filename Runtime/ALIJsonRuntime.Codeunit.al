@@ -19,7 +19,7 @@
 // in place), callers write the narrowed value back into the bank with SetTok() as
 // belt-and-suspenders — mirrors "ALI Http Runtime"'s Box.SetVal() write-back after methods
 // that might reassign rather than mutate.
-codeunit 51081 "ALI Json Runtime"
+codeunit 51148 "ALI Json Runtime"
 {
     Access = Public;
     SingleInstance = true;

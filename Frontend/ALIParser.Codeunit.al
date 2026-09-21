@@ -13,7 +13,7 @@
 //   - never stop at first error: missing-token insertion + panic-mode sync (§5.2).
 //   - depth guard increments on STATEMENT recursion too (§5.4) — nested if is the
 //     primary stack-depth driver.
-codeunit 51022 "ALI Parser"
+codeunit 51108 "ALI Parser"
 {
     Access = Public;
     SingleInstance = false;
@@ -221,19 +221,19 @@ codeunit 51022 "ALI Parser"
                 if K = KindTrigger() then
                     Kids.Add(ParseTrigger(Ctx, Tokens, Ast, Diags))
                 else
-                // A module-scope `var` block does not have to come first: AL objects routinely
-                // put their global var section AFTER the last procedure (that is where the AL
-                // formatter leaves it), and pasting such a body into a script has to keep those
-                // globals. The binder classifies root children by kind, not by position, so a
-                // late section declares exactly what a leading one does.
-                if K = KindVar() then
-                    Kids.Add(ParseVarSection(Ctx, Tokens, Ast, Diags, 0))
-                else begin
-                    Diags.AddError('ALI911', 'Expected procedure declaration', Tokens.GetStartPos(Ctx.CurIndex()), 0);
-                    SyncTopLevel(Ctx, Tokens);
-                    if Ctx.AtEof() then
-                        break;
-                end;
+                    // A module-scope `var` block does not have to come first: AL objects routinely
+                    // put their global var section AFTER the last procedure (that is where the AL
+                    // formatter leaves it), and pasting such a body into a script has to keep those
+                    // globals. The binder classifies root children by kind, not by position, so a
+                    // late section declares exactly what a leading one does.
+                    if K = KindVar() then
+                        Kids.Add(ParseVarSection(Ctx, Tokens, Ast, Diags, 0))
+                    else begin
+                        Diags.AddError('ALI911', 'Expected procedure declaration', Tokens.GetStartPos(Ctx.CurIndex()), 0);
+                        SyncTopLevel(Ctx, Tokens);
+                        if Ctx.AtEof() then
+                            break;
+                    end;
         end;
     end;
 

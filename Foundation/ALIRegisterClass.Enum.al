@@ -1,4 +1,4 @@
-enum 51019 "ALI Register Class"
+enum 51115 "ALI Register Class"
 {
     // ===== Register classes (§7.1) — ADDED IN M4 =====
     //

@@ -19,7 +19,7 @@
 //     free: the parser builds bottom-up left-to-right, so every node of a later statement has
 //     a higher index than the assignment statement's node.
 // The assignment itself is left in place (one dead store — harmless, not worth a pass).
-codeunit 51072 "ALI Const Prop Pass" implements "ALI Opt Pass"
+codeunit 51144 "ALI Const Prop Pass" implements "ALI Opt Pass"
 {
     Access = Public;
     SingleInstance = false;

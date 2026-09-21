@@ -8,7 +8,7 @@
 //
 // Cursor is a 1-based token index. The lexer always appends an EndOfFileToken, so the
 // cursor never runs off the end: Peek past EOF returns EOF repeatedly.
-codeunit 51021 "ALI Parse Ctx"
+codeunit 51107 "ALI Parse Ctx"
 {
     Access = Public;
     SingleInstance = false;

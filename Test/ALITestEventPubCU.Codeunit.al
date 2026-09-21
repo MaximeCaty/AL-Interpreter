@@ -7,7 +7,7 @@
 // Kept in the MAIN app, like "ALI Test Helper CU", so its AL source is harvestable. Its
 // subscribers live in "ALI Test Event Sub CU" (and a manual one in "ALI Test Event Manual Sub").
 // Nothing raises these events natively: they only ever fire through the interpreter.
-codeunit 51113 "ALI Test Event Pub CU"
+codeunit 51156 "ALI Test Event Pub CU"
 {
     // IsHandled pattern: a subscriber may take over, visible here through the var parameter.
     // Otherwise OnAfterPost's subscriber rescales Amount (its parameters are declared in the

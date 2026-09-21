@@ -1,7 +1,7 @@
 // ALI Builtin Kind — interpreter dispatch kind, resolved once at registry build time
 // (see "ALI Builtin Registry".ClassifyKinds) and read per builtin call by the interpreter.
 // Ordinals match the former KindSplit()/KindVariantTest() constants.
-enum 51105 "ALI Builtin Kind"
+enum 51120 "ALI Builtin Kind"
 {
     Extensible = false;
 

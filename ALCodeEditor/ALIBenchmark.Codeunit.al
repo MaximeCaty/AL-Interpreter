@@ -4,7 +4,7 @@
 // did identical work before comparing durations.
 // Workload per Customer: SetLoadFields read, Text ops, Char arithmetic loop, Decimal rounding,
 // Date check, Dictionary/List updates and three sub procedure calls. Read-only.
-codeunit 51049 "ALI Benchmark"
+codeunit 51129 "ALI Benchmark"
 {
     Access = Internal;
 

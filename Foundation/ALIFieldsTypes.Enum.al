@@ -1,4 +1,4 @@
-enum 51005 "ALI Fields Types"
+enum 51102 "ALI Fields Types"
 {
     Extensible = true;
     //OptionMembers = TableFilter,RecordID,OemText,Date,Time,DateFormula,Decimal,Media,MediaSet,Text,Code,Binary,BLOB,Boolean,Integer,OemCode,Option,BigInteger,Duration,GUID,DateTime;

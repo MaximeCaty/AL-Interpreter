@@ -7,7 +7,7 @@
 // through the virtual Field table, §D1), or a real Enum object. Each gets an integer SetId;
 // integer<->name/caption maps for a set are built EXACTLY ONCE (EnsureBuilt), then every
 // subsequent lookup is a dictionary probe — the whole point of memoizing (§ plan perf note).
-codeunit 51062 "ALI Option Meta"
+codeunit 51137 "ALI Option Meta"
 {
     Access = Public;
     SingleInstance = true;

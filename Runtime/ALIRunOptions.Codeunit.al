@@ -11,7 +11,7 @@
 //
 // SingleInstance mirrors "ALI Interpreter" (also single-instance) so options set by a host
 // before Run() are visible without threading a var-param through every builtin call.
-codeunit 51035 "ALI Run Options"
+codeunit 51116 "ALI Run Options"
 {
     Access = Public;
     SingleInstance = true;

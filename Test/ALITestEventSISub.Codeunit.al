@@ -3,7 +3,7 @@
 // Microsoft's "Library Assert" test library, which is not installed by default.
 #if TEST
 // ALI Test Event SI Sub — a SingleInstance subscriber: its globals must survive between raises.
-codeunit 51116 "ALI Test Event SI Sub"
+codeunit 51159 "ALI Test Event SI Sub"
 {
     SingleInstance = true;
 

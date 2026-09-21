@@ -8,7 +8,7 @@
 // The node is rewritten in place (SetKind/SetChildren); statements have TypeOrd 0, so the
 // §12 "preserve result TypeOrd" contract holds trivially. Conditions that are not literal
 // bools are left untouched — this pass never evaluates anything itself.
-codeunit 51073 "ALI Dead Branch Pass" implements "ALI Opt Pass"
+codeunit 51145 "ALI Dead Branch Pass" implements "ALI Opt Pass"
 {
     Access = Public;
     SingleInstance = false;

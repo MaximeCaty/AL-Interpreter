@@ -9,7 +9,7 @@
 // builder appended so far, not just handle H. List.Add() forces a genuinely distinct instance
 // per element (same reference semantics that already work for a single TextBuilder var), which
 // avoids the aliasing.
-codeunit 51037 "ALI TextBuilder Runtime"
+codeunit 51118 "ALI TextBuilder Runtime"
 {
     Access = Public;
     SingleInstance = true;

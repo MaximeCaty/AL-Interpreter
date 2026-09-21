@@ -4,7 +4,7 @@
 #if TEST
 // ALI Test Sec Filter Sub — a MANUAL subscriber to "TOO Record Security Filters" that restricts
 // "ALI Test Customer" to "No." = 'S1'. Bound only by the record-security test in "ALI Record Tests".
-codeunit 51117 "ALI Test Sec Filter Sub"
+codeunit 51160 "ALI Test Sec Filter Sub"
 {
     EventSubscriberInstance = Manual;
 

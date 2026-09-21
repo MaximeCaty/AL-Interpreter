@@ -26,7 +26,7 @@
 // NameId back through the Token Table spelling only when needed. To stay decoupled from a
 // specific Token Table instance, ResolveByName(UpperName) is the primary entry and the
 // binder upper-cases the callee spelling before calling.
-codeunit 51039 "ALI Builtin Registry"
+codeunit 51120 "ALI Builtin Registry"
 {
     Access = Public;
     // Signature table is immutable once built and shared by binder, lowerer, interpreter and

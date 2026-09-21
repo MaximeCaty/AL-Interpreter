@@ -9,7 +9,7 @@
 // The Result pane has two panels: Output (what the last SUCCESSFUL run printed — kept when a
 // later compile fails) and Problems (the diagnostics of the last compile or live syntax check).
 // Scripts run in strict entry mode: `trigger OnRun()` is the one and only entry point.
-page 51016 "ALI Script Editor"
+page 51101 "ALI Script Editor"
 {
     ApplicationArea = All;
     Caption = 'AL Script Editor';

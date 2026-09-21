@@ -6,7 +6,7 @@
 //
 // Processing-only and never really executed: the test's ReportHandler takes the run over, so
 // all it has to be is a report on "ALI Test Customer" the handler can be typed against.
-report 51000 "ALI Test Customer Report"
+report 51101 "ALI Test Customer Report"
 {
     ProcessingOnly = true;
     UseRequestPage = false;

@@ -26,7 +26,7 @@
 // SingleInstance so the RecordRef array survives across the dispatch loop; Reset() by the
 // interpreter's Reset (pitfall 19). Capacity = ArrayLen(RecRefs) = 1024, cross-checked against
 // "ALI Limits".MaxRecordSlots by AssertBankCapacity() on every Reset.
-codeunit 51034 "ALI Rec Runtime"
+codeunit 51115 "ALI Rec Runtime"
 {
     Access = Public;
 

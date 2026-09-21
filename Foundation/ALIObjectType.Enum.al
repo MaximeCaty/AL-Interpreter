@@ -1,7 +1,7 @@
 // ALI Object Type — cross-object source-harvest target kinds per §18.5.
 // FROZEN SERIALIZATION CONTRACT (§10): explicit dense ordinals from 0, append-only.
 // Used by ALI Source Provider + CALL_OBJ + module-registry keying (§18).
-enum 51008 "ALI Object Type"
+enum 51104 "ALI Object Type"
 {
     Extensible = false;
 

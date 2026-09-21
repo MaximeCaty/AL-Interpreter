@@ -3,7 +3,7 @@
 // Rules: never renumber; additions APPEND at next free ordinal only; never reuse an
 // ordinal; any violation is a format-version bump. Do NOT rely on AL auto-numbering.
 // Names mirror Microsoft SyntaxKind.cs so the decompiled source stays a usable reference.
-enum 51012 "ALI TokenKind"
+enum 51108 "ALI TokenKind"
 {
     Extensible = false;
 

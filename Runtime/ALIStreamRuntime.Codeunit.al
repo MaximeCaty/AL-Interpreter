@@ -22,7 +22,7 @@
 // M6 supported ops (§19.7): OutStream WriteText / WriteLine / Write; InStream ReadText /
 // Read / EOS / Length; plus Link(in <- out) to share a backing for a round-trip. SingleInstance so the
 // backings survive the dispatch loop; Reset() by the interpreter.
-codeunit 51036 "ALI Stream Runtime"
+codeunit 51117 "ALI Stream Runtime"
 {
     Access = Public;
     SingleInstance = true;

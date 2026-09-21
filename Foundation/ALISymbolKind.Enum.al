@@ -1,6 +1,6 @@
 // ALI Symbol Kind — symbol classification per §6.1.
 // FROZEN SERIALIZATION CONTRACT (§10): explicit dense ordinals from 0, append-only.
-enum 51011 "ALI Symbol Kind"
+enum 51107 "ALI Symbol Kind"
 {
     Extensible = false;
 

@@ -1,4 +1,4 @@
-page 51026 "ALI Stored Scripts"
+page 51103 "ALI Stored Scripts"
 {
     ApplicationArea = All;
     Caption = 'AL Stored Scripts';

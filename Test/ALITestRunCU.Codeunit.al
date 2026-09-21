@@ -12,7 +12,7 @@
 // `Codeunit.Run` a fresh instance, but a single-instance codeunit's state is the session's, so
 // the counter survives for the assertion. It also survives a FAILED run — a rolled-back
 // Codeunit.Run undoes database writes, never variables.
-codeunit 51108 "ALI Test Run CU"
+codeunit 51154 "ALI Test Run CU"
 {
     SingleInstance = true;
 

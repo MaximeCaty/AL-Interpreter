@@ -5,7 +5,7 @@
 // RIMD on both tables, because both are things the USER maintains from the UI: stored scripts are
 // written, renamed and deleted from the Script Editor, and preprocessor symbols are typed into
 // their own list page. A read-only variant would make the app look installed but unusable.
-permissionset 51001 "ALI Interpreter"
+permissionset 51101 "ALI Interpreter"
 {
     Access = Public;
     Assignable = true;

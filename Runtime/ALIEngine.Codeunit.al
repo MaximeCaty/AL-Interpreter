@@ -11,7 +11,7 @@
 //
 // Every store/state codeunit is Reset() before use (§13 facade row, pitfall 19) — the
 // single-instance interpreter included.
-codeunit 51029 "ALI Engine"
+codeunit 51111 "ALI Engine"
 {
     Access = Public;
     SingleInstance = true;

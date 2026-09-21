@@ -1,7 +1,7 @@
 // ON PREMISE ONLY — the table it edits exists only there. See "ALI Preproc Symbol".
 #if not CLOUD
 // ponytail: plain list page — the table is unusable without one way to enter rows.
-page 51107 "ALI Preproc Symbols"
+page 51106 "ALI Preproc Symbols"
 {
     ApplicationArea = All;
     Caption = 'AL Interpreter Preprocessor Symbols', Comment = 'Symboles préprocesseur AL Interpreter';

@@ -16,7 +16,7 @@
 //   * StrMenu(...)  -> same scripting mechanism, Integer answer (0 = Cancel).
 //   * Sleep(ms)     -> NEVER actually sleeps; capped via "ALI Run Options".SleepCapMs (0 by
 //     default = no-op). This satisfies "never opens real UI / never blocks" (§8).
-codeunit 51028 "ALI Builtin System"
+codeunit 51110 "ALI Builtin System"
 {
     Access = Public;
     SingleInstance = false;

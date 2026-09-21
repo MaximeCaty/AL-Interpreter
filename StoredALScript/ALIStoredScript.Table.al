@@ -1,4 +1,4 @@
-table 51013 "ALI Stored Script"
+table 51101 "ALI Stored Script"
 {
     // The row IS the user's own work: the AL they typed, the options they chose and the output of
     // running it. CustomerContent on the table classifies every field, which is what an AppSource

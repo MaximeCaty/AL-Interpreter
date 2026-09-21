@@ -19,7 +19,7 @@
 //
 // Lookups key on the interned NameId (integer). Resolution is O(scope-depth) dictionary
 // probes; identifiers are compared by id, never by string (§6.1).
-codeunit 51041 "ALI Symbol Table"
+codeunit 51122 "ALI Symbol Table"
 {
     Access = Public;
     SingleInstance = false;

@@ -20,7 +20,7 @@
 // counterpart would have the wrong key hash/equality semantics); only the transient
 // call-boundary value is boxed, exactly like every other builtin/method dispatch in this
 // interpreter.
-codeunit 51059 "ALI List Runtime"
+codeunit 51135 "ALI List Runtime"
 {
     Access = Public;
     SingleInstance = true;

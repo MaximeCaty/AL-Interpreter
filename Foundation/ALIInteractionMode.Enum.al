@@ -1,7 +1,7 @@
 // ALI Interaction Mode — how the runtime handles Confirm(...) / StrMenu(...) calls when no
 // scripted answer is configured (§8 handler options).
 // FROZEN SERIALIZATION CONTRACT (§10): explicit dense ordinals from 0, append-only.
-enum 51016 "ALI Interaction Mode"
+enum 51112 "ALI Interaction Mode"
 {
     Extensible = false;
 

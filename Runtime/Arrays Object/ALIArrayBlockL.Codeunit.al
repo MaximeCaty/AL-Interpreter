@@ -1,6 +1,6 @@
 // ALI Array Block L — large tier (Cap 10000), one native array[10000] of Variant per instance
 // (~240KB). Identical to "ALI Array Block S" except Cells size and Cap().
-codeunit 51068 "ALI Array Block L" implements "ALI Array Block"
+codeunit 51141 "ALI Array Block L" implements "ALI Array Block"
 {
     Access = Public;
 

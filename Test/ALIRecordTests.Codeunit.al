@@ -5,7 +5,7 @@
 // ALI Record Tests — the data-access surface: Record, RecordRef (incl. the P4 batch) and
 // FieldRef. Merged from the former "ALI Record/RecordRef/RecordRef P4/FieldRef Tests"
 // codeunits; all sections share the "ALI Test Customer"/"ALI Test Order Line" fixtures.
-codeunit 51052 "ALI Record Tests"
+codeunit 51131 "ALI Record Tests"
 {
     Subtype = Test;
     TestPermissions = Disabled;

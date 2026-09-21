@@ -7,7 +7,7 @@
 // `preprocessorSymbols` in app.json — metadata the runtime cannot give us, so it is declared
 // here once per extension and read by the lexer when a harvested object is compiled.
 // File-level `#define` / `#undef` are applied on top of this set by the lexer itself.
-table 51106 "ALI Preproc Symbol"
+table 51104 "ALI Preproc Symbol"
 {
     Caption = 'AL Interpreter Preprocessor Symbol', Comment = 'Symbole de préprocesseur AL Interpreter';
     DataClassification = SystemMetadata;

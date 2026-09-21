@@ -10,7 +10,7 @@
 //
 // Handle encoding: handle = (keyClass*16 + valueClass)*HANDLE_STRIDE + bankIndex.
 // keyClass/valueClass ARE "ALI Type Rules" RegClass* ordinals (1..10) directly.
-codeunit 51060 "ALI Dict Runtime"
+codeunit 51136 "ALI Dict Runtime"
 {
     Access = Public;
     SingleInstance = true;

@@ -13,7 +13,7 @@
 // base table's object context, so everything a table procedure may do must work unchanged —
 // unqualified base-table fields, a field this very extension adds, object globals, sibling calls,
 // and a call back into a base-table procedure through `Rec`.
-tableextension 51112 "ALI Test Customer Ext" extends "ALI Test Customer"
+tableextension 51101 "ALI Test Customer Ext" extends "ALI Test Customer"
 {
     fields
     {

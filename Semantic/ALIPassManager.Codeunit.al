@@ -3,7 +3,7 @@
 // interfaces in a collection); each value is cast to its "ALI Opt Pass" implementation at run
 // time. AddDefault() installs the standard pass order; a host may build a custom order via
 // AddPass() before RunAll().
-codeunit 51046 "ALI Pass Manager"
+codeunit 51126 "ALI Pass Manager"
 {
     Access = Public;
     SingleInstance = false;

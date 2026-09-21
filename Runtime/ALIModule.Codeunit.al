@@ -16,7 +16,7 @@
 // counts (classes per "ALI Type Rules" RegClass*), result class/slot/type, param
 // descriptors. Module-level vars occupy ABSOLUTE slots 1..GlobalCount(cls) below every
 // frame window. Legacy single-proc getters delegate to the entry proc's row.
-codeunit 51033 "ALI Module"
+codeunit 51114 "ALI Module"
 {
     Access = Public;
     SingleInstance = false;

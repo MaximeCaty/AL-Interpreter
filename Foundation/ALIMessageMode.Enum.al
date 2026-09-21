@@ -1,6 +1,6 @@
 // ALI Message Mode — how the runtime handles Message(...) calls (§8 handler options).
 // FROZEN SERIALIZATION CONTRACT (§10): explicit dense ordinals from 0, append-only.
-enum 51017 "ALI Message Mode"
+enum 51113 "ALI Message Mode"
 {
     Extensible = false;
 

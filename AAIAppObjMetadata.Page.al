@@ -3,7 +3,7 @@
 // for what the interpreter does instead when no stored AL source can be read.
 #if not CLOUD
 
-page 51017 "ALI App. Obj. Metadata"
+page 51102 "ALI App. Obj. Metadata"
 {
     ApplicationArea = All;
     Caption = 'Application Object Metadata';
@@ -160,7 +160,7 @@ page 51017 "ALI App. Obj. Metadata"
             end;
     end;
 
-    #region Signature parsing
+#region Signature parsing
 
     // The declaration as ONE line: a signature may wrap over several source lines, so keep
     // appending until the parameter parentheses balance. Quotes are honoured ("(" inside a
@@ -374,10 +374,10 @@ page 51017 "ALI App. Obj. Metadata"
         end;
         exit(0);
     end;
-    #endregion
+#endregion
 
 
-    #region Specific Function
+#region Specific Function
     procedure GetALProcedureCode(var AppObj: Record "Application Object Metadata"; ProcedureName: Text): Text
     var
         ALLineInGlobalVar: array[25000] of Boolean;
@@ -629,10 +629,10 @@ page 51017 "ALI App. Obj. Metadata"
         Pos := DeclLine.ToLower().IndexOf('protected ');
         exit(DelStr(DeclLine, Pos, StrLen('protected ')));
     end;
-    #endregion
+#endregion
 
 
-    #region Events
+#region Events
     // Every active, non-manual subscription to an event of AppObj's object, as
     // UPPER(published function) -> LF-joined `<codeunit id>|<subscriber function>` entries, in
     // "Event Subscription" record order — the order the platform raises them in. One read per
@@ -891,10 +891,10 @@ page 51017 "ALI App. Obj. Metadata"
                 exit('"' + Name + '"');
         exit(Name);
     end;
-    #endregion
+#endregion
 
 
-    #region Cach.Ln.State
+#region Cach.Ln.State
     local procedure CacheALLinesState(ALLines: List of [Text]; var ALLineInProcedure: array[25000] of Boolean; var ALLineInProcedureName: array[25000] of Text; var ALLineInProcedureBody: array[25000] of Boolean; var ALLineInGlobalVar: array[25000] of Boolean; var ALLineInVar: array[25000] of Boolean)
     var
         InGlobalVarSection, InLocalVarSection : Boolean;
@@ -1034,6 +1034,6 @@ page 51017 "ALI App. Obj. Metadata"
                 end;
         end;
     end;
-    #endregion
+#endregion
 }
 #endif

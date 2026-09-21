@@ -8,7 +8,7 @@
 // "ALI Interpreter" pushes/pops handles on its own frame-scoped AllocStack (§20.5) and calls
 // FreeBlock on frame pop. It NEVER decodes the handle (element class flows via the opcode
 // operand), so the handle is a bare index.
-codeunit 51064 "ALI Array Runtime"
+codeunit 51138 "ALI Array Runtime"
 {
     Access = Public;
     SingleInstance = true;

@@ -7,7 +7,7 @@
 // When a filter is actually set, APPEND a short reason, never overwrite:
 //     if Reason <> '' then Reason += ' ';
 //     Reason += 'Restricted by ...';
-codeunit 51045 "ALI Record Security Filters"
+codeunit 51125 "ALI Record Security Filters"
 {
     Access = Public;
 

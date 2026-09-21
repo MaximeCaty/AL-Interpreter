@@ -6,7 +6,7 @@
 // catalog, i.e. everything that runs BEFORE the binder hands a module to the interpreter.
 // Merged from the former "ALI Lexer/Parser/Parser Recovery/Api Catalog Tests" codeunits;
 // each section keeps its original documentation header below.
-codeunit 51048 "ALI Front End Tests"
+codeunit 51128 "ALI Front End Tests"
 {
     Subtype = Test;
     TestPermissions = Disabled;

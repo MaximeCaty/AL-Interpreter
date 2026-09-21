@@ -24,7 +24,7 @@
 //
 // A single shared MissingNode handle represents absent [opt] children so binder/lowerer
 // indexing stays positional (§5.5). It is created lazily at index 1 on first use.
-codeunit 51019 "ALI Ast Store"
+codeunit 51105 "ALI Ast Store"
 {
     Access = Public;
     SingleInstance = false;

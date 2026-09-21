@@ -6,7 +6,7 @@
 //
 // Main app, so the interpreter can read their source. They never run natively: the events they
 // subscribe to are only raised through the interpreter.
-codeunit 51114 "ALI Test Event Sub CU"
+codeunit 51157 "ALI Test Event Sub CU"
 {
     var
         RaiseCount: Integer;

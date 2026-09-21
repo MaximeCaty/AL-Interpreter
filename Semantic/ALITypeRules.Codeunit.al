@@ -28,7 +28,7 @@
 // "ALI Op Group" (51102), the conversion lattice in "ALI Conv Kind" (51103), register
 // classes in "ALI Register Class" (51019). Enum literals resolve at compile time — no AL
 // call overhead on the binder/lowerer hot paths.
-codeunit 51042 "ALI Type Rules"
+codeunit 51123 "ALI Type Rules"
 {
     Access = Public;
     SingleInstance = false;

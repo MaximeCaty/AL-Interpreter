@@ -22,7 +22,7 @@
 // writing the local var back with Box.SetVal() (belt-and-suspenders — covers both in-place
 // mutation and full reassignment by the native method) keeps the box's copy authoritative
 // either way.
-codeunit 51074 "ALI Http Runtime"
+codeunit 51146 "ALI Http Runtime"
 {
     Access = Public;
     SingleInstance = true;

@@ -7,7 +7,7 @@
 // M9 extends (designed not to break): compile diagnostics snapshot, ConsoleOutput,
 // CollectedMessages, interpreted call-stack rendering, ToJson — all additive fields and
 // getters; nothing here changes shape.
-codeunit 51030 "ALI Exec Result"
+codeunit 51112 "ALI Exec Result"
 {
     Access = Public;
     SingleInstance = false;

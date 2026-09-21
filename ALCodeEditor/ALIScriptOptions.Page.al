@@ -1,7 +1,7 @@
 // Interpreter options of "ALI Script Editor", split out of the editor card so the whole page
 // width stays available for the source/result panes. Runs on a temporary copy of the script:
 // the editor may hold a not-yet-saved record (Name = ''), which a DB-bound card cannot open.
-page 51027 "ALI Script Options"
+page 51104 "ALI Script Options"
 {
     ApplicationArea = All;
     Caption = 'AL Script Options';

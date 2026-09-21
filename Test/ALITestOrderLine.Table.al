@@ -7,7 +7,7 @@
 // Same rationale as "ALI Test Customer" (kept in the MAIN app so RecMeta can resolve its
 // metadata via the virtual Field table). Exercises Get() with a 2-field primary key — the
 // interpreter must pass BOTH key values through to RecordRef.Get(RecordId) (§7.5).
-table 51019 "ALI Test Order Line"
+table 51103 "ALI Test Order Line"
 {
     Caption = 'ALI Test Order Line';
     DataClassification = CustomerContent;

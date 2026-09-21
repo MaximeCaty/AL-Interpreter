@@ -56,7 +56,7 @@
 //   Param node ................ SymbolId = param symbol id
 //   CompilationUnit root ...... TypeOrd = entry result type, SlotIndex = entry result
 //                               slot (frame-relative), SymbolId = ENTRY PROC ID
-codeunit 51038 "ALI Binder"
+codeunit 51119 "ALI Binder"
 {
     Access = Public;
     SingleInstance = false;

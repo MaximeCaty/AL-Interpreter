@@ -6,7 +6,7 @@
 // TextBuilder, text indexing/slicing, BigText, Json, Xml and HttpClient. Merged from the
 // former "ALI Array/List Dict/TextBuilder/Text Index/BigText/Json/Xml/Http Tests" codeunits.
 // NOTE: the Xml section uses RunXmlText (RunText + XML-declaration stripping), not RunText.
-codeunit 51056 "ALI Data Type Tests"
+codeunit 51134 "ALI Data Type Tests"
 {
     Subtype = Test;
     TestPermissions = Disabled;

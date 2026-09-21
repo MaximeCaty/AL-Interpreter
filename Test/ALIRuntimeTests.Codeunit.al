@@ -6,7 +6,7 @@
 // expression evaluation, control flow, foreach, option/enum semantics, Label/Variant and
 // the builtin function surface. Merged from the former "ALI Runtime Expr/Runtime Flow/
 // ForEach/Option Enum/Label Variant/Builtin Tests" codeunits.
-codeunit 51053 "ALI Runtime Tests"
+codeunit 51132 "ALI Runtime Tests"
 {
     Subtype = Test;
     TestPermissions = Disabled;

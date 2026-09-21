@@ -13,7 +13,7 @@
 //   * interpreted-to-interpreted calls never use AL recursion: the 1000-deep recursion
 //     test would blow the (uncatchable) AL stack if CALL recursed natively;
 //   * frame/register exhaustion is a clean captured runtime error, never a crash.
-codeunit 51051 "ALI Procedure Tests"
+codeunit 51130 "ALI Procedure Tests"
 {
     Subtype = Test;
     TestPermissions = Disabled;

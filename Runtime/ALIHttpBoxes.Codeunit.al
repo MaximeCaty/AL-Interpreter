@@ -10,7 +10,7 @@
 // non-SingleInstance codeunit var auto-instantiates a fresh one), and fetching it back out of
 // the bank list yields a handle to that SAME instance — no List-of-value-type aliasing risk to
 // worry about at all.
-codeunit 51076 "ALI Http Client Box"
+codeunit 51147 "ALI Http Client Box"
 {
     Access = Public;
 
@@ -28,7 +28,7 @@ codeunit 51076 "ALI Http Client Box"
     end;
 }
 
-codeunit 51077 "ALI Http Request Box"
+codeunit 51131 "ALI Http Request Box"
 {
     Access = Public;
 
@@ -46,7 +46,7 @@ codeunit 51077 "ALI Http Request Box"
     end;
 }
 
-codeunit 51078 "ALI Http Response Box"
+codeunit 51130 "ALI Http Response Box"
 {
     Access = Public;
 
@@ -64,7 +64,7 @@ codeunit 51078 "ALI Http Response Box"
     end;
 }
 
-codeunit 51079 "ALI Http Content Box"
+codeunit 51128 "ALI Http Content Box"
 {
     Access = Public;
 
@@ -82,7 +82,7 @@ codeunit 51079 "ALI Http Content Box"
     end;
 }
 
-codeunit 51080 "ALI Http Headers Box"
+codeunit 51102 "ALI Http Headers Box"
 {
     Access = Public;
 

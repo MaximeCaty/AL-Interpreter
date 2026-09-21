@@ -97,7 +97,7 @@
 // object keep separate state exactly as native AL does. `Codeunit.Run` (phase C3) never reaches
 // this registry at all: the PLATFORM executes the codeunit, so OnRun stays unharvested and the
 // error trap is native AL's own conditional Run — see "ALI Binder".BindRunCall.
-codeunit 51101 "ALI Object Registry"
+codeunit 51152 "ALI Object Registry"
 {
     Access = Public;
 #if not CLOUD

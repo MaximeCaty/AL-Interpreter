@@ -2,7 +2,7 @@
 // (~2KB). Bodies of S/M/L are identical except the Cells size and Cap() — see
 // ArrayNativeBlockPlan.md. Seeding/range-check live here; tier pick + lifecycle in
 // "ALI Array Runtime".
-codeunit 51066 "ALI Array Block S" implements "ALI Array Block"
+codeunit 51139 "ALI Array Block S" implements "ALI Array Block"
 {
     Access = Public;
 

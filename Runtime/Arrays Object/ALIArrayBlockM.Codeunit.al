@@ -1,6 +1,6 @@
 // ALI Array Block M — medium tier (Cap 1000), one native array[1000] of Variant per instance
 // (~24KB). Identical to "ALI Array Block S" except Cells size and Cap().
-codeunit 51067 "ALI Array Block M" implements "ALI Array Block"
+codeunit 51140 "ALI Array Block M" implements "ALI Array Block"
 {
     Access = Public;
 

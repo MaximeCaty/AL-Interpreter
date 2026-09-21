@@ -1,4 +1,4 @@
-enum 51103 "ALI Conv Kind"
+enum 51118 "ALI Conv Kind"
 {
     // ===== Implicit-conversion lattice (§6.4) =====
     //

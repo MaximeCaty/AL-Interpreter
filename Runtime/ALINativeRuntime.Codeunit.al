@@ -25,7 +25,7 @@
 //   * The static receivers `Page.Run` / `Report.Run` / `File.*Stream` are rows of this same
 //     dispatch under pseudo codeunit ids — platform methods, no instance at all.
 // SingleInstance so the bank survives the dispatch loop; Reset() by the interpreter per run.
-codeunit 51043 "ALI Native Runtime"
+codeunit 51124 "ALI Native Runtime"
 {
     Access = Public;
     SingleInstance = true;

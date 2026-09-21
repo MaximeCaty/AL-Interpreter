@@ -5,7 +5,7 @@
 // per-type method tables mirror the binder's *MethodId maps 1:1 (kept HERE, next to the
 // compiler, instead of hardcoded in JS — update both when a method family grows; the
 // ALIApiCatalogTests probe-compile guard keeps this honest).
-codeunit 51083 "ALI Api Catalog"
+codeunit 51149 "ALI Api Catalog"
 {
     Access = Public;
 
