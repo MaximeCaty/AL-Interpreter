@@ -553,7 +553,7 @@ Both builds are available on the [Releases](https://github.com/MaximeCaty/AL-Int
 
 ### What a cloud build cannot do
 
-Everything the interpreter does on its own — lexing, parsing, binding, optimizing, lowering, running, the whole supported feature surface of [chapter 4](#4-supported-features) — is identical in both flavors. What differs is anything that has to read **the AL source of an already published object**, which lives on table `Application Object Metadata`. That table's scope is `OnPrem`: no cloud extension may reference it, and the platform offers no substitute on SaaS.
+Everything the interpreter does on its own (whole supported feature surface of [chapter 4](#4-supported-features)) — is identical in both flavors. What differs is anything that has to read **the AL source of an already published object**, eg calling a record procedure, which require access on table `Application Object Metadata`. That table's scope is `OnPrem`.
 
 | Feature | On premise | Cloud |
 |---|---|---|
