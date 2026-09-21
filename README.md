@@ -166,7 +166,7 @@ All ✅:
 
 - Assignment `:=`, compound `+=` `-=` `*=` `/=`
 - `if/then/else`, `case` (value lists, ranges), `for/to/downto`, `while`, `repeat/until`, `foreach` (List, JsonArray, XmlNodeList, XmlAttributeCollection, Dictionary keys), `exit`, `break`
-- All operators with native precedence; `and`/`or` evaluated eagerly as in native AL
+- All operators with native precedence; `and`/`or`/`xor` evaluated eagerly as in native AL
 - Procedures: by-value and `var` parameters, recursion, overloading, named return values, paren-less calls (`MyProc;`, `x := Rec.Count`)
 - Record parameters, by value and `var`, temporary records
 - `[TryFunction]`, `GetLastErrorText`
