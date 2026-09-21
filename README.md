@@ -21,7 +21,7 @@ Typical uses:
 
 Search for page "AL Script Editor" :
 <!-- SCREENSHOT 1: full editor page — code with syntax coloring on the left, Result pane with a successful run on the right. Best "hero" image, keep it wide. -->
-![Screenshot full code editor page](https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-Sample.png?raw=true)
+![Screenshot full code editor page](https://github.com/MaximeCaty/AL-Interpreter/blob/main/Images/Screenshot-Sample.png?raw=true)
 
 The **AL Script Editor** page brings a VS Code-like experience into the Business Central web client with collboration of JavaScript addin and AL metadata.
 Type AL, press **F5**, read the result. 
@@ -31,12 +31,12 @@ Type AL, press **F5**, read the result.
 Builtin methods, record fields and procedures, variable definition, are all suggested while typing in searchable dropdown list.
 
 <!-- SCREENSHOT 2 (optional): completion popup open on `Customer.` showing fields, or hover tooltip on a procedure. -->
-<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-AutoCompletion.png" alt="Screenshot-AutoCompletion" width="50%"/>
+<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Images/Screenshot-AutoCompletion.png" alt="Screenshot-AutoCompletion" width="50%"/>
 
 ### Live syntax check
 
 <!-- SCREENSHOT 3 a script with 2–3 errors underlined, Problems panel open below showing the messages (one with a "did you mean" hint). -->
-![Screenshot syntax error](https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-Syntax-Error.png?raw=true)
+![Screenshot syntax error](https://github.com/MaximeCaty/AL-Interpreter/blob/main/Images/Screenshot-Syntax-Error.png?raw=true)
 
 Code is checked **as you type**. 
 Errors are underlined in place and listed in the **Problems** panel. 
@@ -49,13 +49,13 @@ Several scripts can be open at once in tabs.
 New tab are scratch buffer; once you give it a name (click on tab name to edit) it becomes a stored script and is auto-saved. Stored scripts reopen from the script list.
 
 <!-- SCREENSHOT 4: tab strip with 2–3 open scripts, one being renamed inline. -->
-<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-MultiTabs.png?raw=true" alt="Screenshot multi tab" width="50%"/>
+<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Images/Screenshot-MultiTabs.png?raw=true" alt="Screenshot multi tab" width="50%"/>
 
 ### Compile & run options
 
 <!-- SCREENSHOT 5: the Options page (Compiler Options + Execution Options groups). -->
-<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-Compile-Options-dropdown.png?raw=true" alt="Screenshot-Compile-Options-dropdown" width="200"/>
-<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Screenshot-Compile-Options.png?raw=true" alt="Screenshot-Compile-Options" width="75%"/>
+<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Images/Screenshot-Compile-Options-dropdown.png?raw=true" alt="Screenshot-Compile-Options-dropdown" width="200"/>
+<img src="https://github.com/MaximeCaty/AL-Interpreter/blob/main/Images/Screenshot-Compile-Options.png?raw=true" alt="Screenshot-Compile-Options" width="75%"/>
 
 | Option | Default | Effect |
 |---|---|---|
