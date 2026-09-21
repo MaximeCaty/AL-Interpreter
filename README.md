@@ -10,9 +10,9 @@ No VS Code, no container, no publish cycle — type code, press **F5**, read the
 
 ![AL Script Editor — code with syntax coloring on the left, run result on the right](AL-Interpreter/Images/Screenshot-Sample.png)
 
-- **Safe on live data** — *Simulation mode* rolls back every database write at the end of the run, even on success.
+- **Safe on live data** — Enable *Simulation mode*, rolls back every record writes at the end of the run, even on success.
 - **Behaves like native AL** — same compiler rules, same runtime semantics, table triggers and events run natively, user permissions apply.
-- **Built for AI agents** — every error reported at once with line, caret, hint and "did you mean", so a model can self-correct.
+- **Built for AI agents** — every error reported at once with line, and hint like "did you mean", so a model can self-correct.
 
 Typical uses: one-off **data fixes**, **investigation** of a live environment, trying an **AL concept** without a dev setup, and a **sandbox for AI-generated AL**.
 
