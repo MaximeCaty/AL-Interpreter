@@ -2107,6 +2107,127 @@ codeunit 51130 "ALI Procedure Tests"
         Assert.AreEqual(1, Interp.GetResultInt(), 'Clear on a codeunit variable resets its globals');
     end;
 
+    // ===== IsolatedStorage (native catalogue, pseudo id) =====
+    //
+    // The platform's own store is the oracle here: the script writes, and the TEST reads back
+    // with native AL — if the two disagree the bridge is wrong. Every key is deleted again at
+    // the end of the test, since isolated storage survives the run (which is exactly why the
+    // Simulation gate in T119 has to exist).
+
+    [Test]
+    procedure T117_IsolatedStorageRoundTripsThroughTheScript()
+    var
+        Engine: Codeunit "ALI Engine";
+        RunOptions: Codeunit "ALI Run Options";
+        Result: Codeunit "ALI Exec Result";
+        Interp: Codeunit "ALI Interpreter";
+        Stored: Text;
+    begin
+        RunOptions.Reset();     // Normal mode: writes are allowed and are real
+        if IsolatedStorage.Contains('ALI-T117', DataScope::Company) then
+            IsolatedStorage.Delete('ALI-T117', DataScope::Company);
+
+        Assert.IsTrue(
+            Engine.CompileAndRun(
+                'trigger OnRun(): Text var v: Text; ' +
+                'begin IsolatedStorage.Set(''ALI-T117'', ''hello'', DataScope::Company); ' +
+                'IsolatedStorage.Get(''ALI-T117'', DataScope::Company, v); exit(v); end;', Result),
+            StrSubstNo('run failed: %1', Result.ErrorMessage()));
+        Assert.AreEqual('hello', Interp.GetResultText(), 'the script reads back what it wrote');
+
+        // The write reached the PLATFORM store, not an ALI-side cache.
+        Assert.IsTrue(IsolatedStorage.Get('ALI-T117', DataScope::Company, Stored), 'the key exists natively');
+        Assert.AreEqual('hello', Stored, 'native AL sees the script''s value');
+
+        IsolatedStorage.Delete('ALI-T117', DataScope::Company);
+    end;
+
+    [Test]
+    procedure T118_IsolatedStorageContainsAndDelete()
+    var
+        Engine: Codeunit "ALI Engine";
+        RunOptions: Codeunit "ALI Run Options";
+        Result: Codeunit "ALI Exec Result";
+        Interp: Codeunit "ALI Interpreter";
+    begin
+        RunOptions.Reset();
+        if IsolatedStorage.Contains('ALI-T118', DataScope::Company) then
+            IsolatedStorage.Delete('ALI-T118', DataScope::Company);
+
+        // Contains before / after the write, then Delete, as one Text so a single run covers the
+        // whole lifecycle: 'false|true|true|false'.
+        Assert.IsTrue(
+            Engine.CompileAndRun(
+                'trigger OnRun(): Text var r: Text; ' +
+                'begin r := Format(IsolatedStorage.Contains(''ALI-T118'', DataScope::Company)); ' +
+                'IsolatedStorage.Set(''ALI-T118'', ''x'', DataScope::Company); ' +
+                'r += ''|'' + Format(IsolatedStorage.Contains(''ALI-T118'', DataScope::Company)); ' +
+                'r += ''|'' + Format(IsolatedStorage.Delete(''ALI-T118'', DataScope::Company)); ' +
+                'r += ''|'' + Format(IsolatedStorage.Contains(''ALI-T118'', DataScope::Company)); exit(r); end;', Result),
+            StrSubstNo('run failed: %1', Result.ErrorMessage()));
+        Assert.AreEqual('False|True|True|False', Interp.GetResultText(), 'Contains / Set / Delete lifecycle');
+        Assert.IsFalse(IsolatedStorage.Contains('ALI-T118', DataScope::Company), 'the script''s Delete reached the platform store');
+    end;
+
+    [Test]
+    procedure T119_IsolatedStorageWritesAreRefusedInSimulation()
+    var
+        Engine: Codeunit "ALI Engine";
+        RunOptions: Codeunit "ALI Run Options";
+        Result: Codeunit "ALI Exec Result";
+    begin
+        // The whole point of the gate: isolated storage is written outside the transaction ALI
+        // rolls back, so a simulated write would OUTLIVE the run. The run must fail and the key
+        // must not exist afterwards.
+        RunOptions.Reset();
+        if IsolatedStorage.Contains('ALI-T119', DataScope::Company) then
+            IsolatedStorage.Delete('ALI-T119', DataScope::Company);
+        RunOptions.SetMode(1);      // Simulation
+
+        Assert.IsFalse(
+            Engine.CompileAndRun(
+                'trigger OnRun() begin IsolatedStorage.Set(''ALI-T119'', ''x'', DataScope::Company); end;', Result),
+            'a Simulation-mode IsolatedStorage.Set must fail');
+        Assert.IsTrue(Result.ErrorMessage().Contains('ALI983'), StrSubstNo('the error names the gate: %1', Result.ErrorMessage()));
+        Assert.IsFalse(IsolatedStorage.Contains('ALI-T119', DataScope::Company), 'nothing was written');
+
+        // Reads stay available in Simulation mode.
+        RunOptions.Reset();
+        IsolatedStorage.Set('ALI-T119', 'readable', DataScope::Company);
+        RunOptions.SetMode(1);
+        Assert.IsTrue(
+            Engine.CompileAndRun(
+                'trigger OnRun(): Text var v: Text; ' +
+                'begin IsolatedStorage.Get(''ALI-T119'', DataScope::Company, v); exit(v); end;', Result),
+            StrSubstNo('a Simulation-mode read must succeed: %1', Result.ErrorMessage()));
+
+        RunOptions.Reset();
+        IsolatedStorage.Delete('ALI-T119', DataScope::Company);
+    end;
+
+    [Test]
+    procedure T120_IsolatedStorageDiagnostics()
+    var
+        MemberDiags: Codeunit "ALI Diag Bag";
+        ScopeDiags: Codeunit "ALI Diag Bag";
+        SecretDiags: Codeunit "ALI Diag Bag";
+        VarDiags: Codeunit "ALI Diag Bag";
+    begin
+        Assert.IsFalse(Pipeline.CompileExpectingErrors('trigger OnRun() begin IsolatedStorage.Purge(''k''); end;', MemberDiags),
+            'Purge is not a member of IsolatedStorage');
+        // A TextEncoding is an Option too — the scope parameter must not accept one, or
+        // TextEncoding::UTF8 would silently mean DataScope::Company (both ordinal 1).
+        Assert.IsFalse(Pipeline.CompileExpectingErrors('trigger OnRun() begin IsolatedStorage.Set(''k'', ''v'', TextEncoding::UTF8); end;', ScopeDiags),
+            'the scope argument only accepts a DataScope');
+        Assert.IsFalse(Pipeline.CompileExpectingErrors('trigger OnRun() begin IsolatedStorage.Get(''k'', DataScope::Company, ''literal''); end;', VarDiags),
+            'the value of Get is passed by var');
+        // The platform's out-flag overload is Contains(Key, DataScope, var IsSecret) only —
+        // there is no two-argument Contains(Key, var IsSecret), so the second argument of a
+        // two-argument call must be a scope.
+        Assert.IsFalse(Pipeline.CompileExpectingErrors('trigger OnRun() var b: Boolean; begin IsolatedStorage.Contains(''k'', b); end;', SecretDiags),
+            'Contains has no (Key, var IsSecret) overload');
+    end;
+
     // Native reference for T111: the letters of the static OnTrace subscribers, in the order the
     // platform enumerates their Event Subscription rows.
     local procedure ExpectedTraceOrder() Expected: Text

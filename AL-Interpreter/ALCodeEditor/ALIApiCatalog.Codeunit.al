@@ -23,6 +23,7 @@ codeunit 51149 "ALI Api Catalog"
         Root.Add('types', BuildTypesArray());
         Root.Add('builtins', BuildBuiltinsArray());
         Root.Add('methods', BuildMethodsObject());
+        Root.Add('optionsets', BuildOptionSetsObject());
         Root.WriteTo(JsonText);
         exit(JsonText);
     end;
@@ -89,6 +90,7 @@ codeunit 51149 "ALI Api Catalog"
         Arr.Add('XmlWriteOptions');
         Arr.Add('XmlNameTable');
         Arr.Add('TextEncoding');
+        Arr.Add('DataScope');
         exit(Arr);
     end;
 
@@ -175,7 +177,67 @@ codeunit 51149 "ALI Api Catalog"
         Obj.Add('Text', TextMethods());
         Obj.Add('Code', TextMethods());
         Obj.Add('Variant', VariantMethods());
+        // Static pseudo-receivers: not a variable's type, keyed by the RECEIVER NAME the script
+        // types (`IsolatedStorage.`). The editor looks these up by name when no declaration
+        // matches, so they need no entry in the types array.
+        Obj.Add('IsolatedStorage', IsolatedStorageMethods());
         exit(Obj);
+    end;
+
+    // System option sets reachable through `::` — mirrors "ALI Binder".TrySystemOptionSet, whose
+    // member ORDER is the ordinal. Kept here for the same reason as the method tables: the binder
+    // procedure is local, and the catalog is the AL-side surface the editor reads.
+    // ALIFrontEndTests T07 probe-compiles one member per set so a rename breaks loudly.
+    local procedure BuildOptionSetsObject(): JsonObject
+    var
+        Obj: JsonObject;
+    begin
+        Obj.Add('DataScope', OptSet('Module,Company,User,CompanyAndUser'));
+        Obj.Add('TextEncoding', OptSet('MSDos,UTF8,UTF16,Windows'));
+        Obj.Add('IsolationLevel', OptSet('Default,ReadUncommitted,ReadCommitted,RepeatableRead,UpdLock'));
+        Obj.Add('SecurityFilter', OptSet('Validated,Filtered,Ignored,Disallowed'));
+        Obj.Add('TransactionType', OptSet('UpdateNoLocks,Update,Snapshot,Browse,Report'));
+        Obj.Add('ErrorType', OptSet('Client,Internal'));
+        Obj.Add('Verbosity', OptSet('Critical,Error,Warning,Normal,Verbose'));
+        Obj.Add('ClientType', OptSet('Background,ChildSession,Desktop,Management,NAS,OData,Phone,SOAP,Tablet,Web,Windows,Current,Default,ODataV4,Api,Teams'));
+        Obj.Add('DataClassification', OptSet('CustomerContent,ToBeClassified,EndUserIdentifiableInformation,AccountData,EndUserPseudonymousIdentifiers,OrganizationIdentifiableInformation,SystemMetadata'));
+        Obj.Add('PageStyle', OptSet('None,Standard,StandardAccent,Strong,StrongAccent,Attention,AttentionAccent,Favorable,Unfavorable,Ambiguous,Subordinate'));
+        exit(Obj);
+    end;
+
+    // One option set: members in ordinal order, as {n: name, v: ordinal}.
+    local procedure OptSet(CommaNames: Text): JsonArray
+    var
+        A: JsonArray;
+        Row: JsonObject;
+        Names: List of [Text];
+        Name: Text;
+        Ord: Integer;
+    begin
+        Names := CommaNames.Split(',');
+        foreach Name in Names do begin
+            Clear(Row);
+            Row.Add('n', Name);
+            Row.Add('v', Ord);
+            A.Add(Row);
+            Ord += 1;
+        end;
+        exit(A);
+    end;
+
+    // Mirrors the `ISO` native rows in "ALI Builtin Registry" (Set/SetEncrypted/Get/Contains/
+    // Delete, each with and without a DataScope). Contains' out-flag overload exists ONLY with a
+    // scope — there is no Contains(Key, var IsSecret) in the platform.
+    local procedure IsolatedStorageMethods(): JsonArray
+    var
+        A: JsonArray;
+    begin
+        M(A, 'Set', 'Set(Key: Text, Value: Text [, Scope: DataScope])', 'Boolean');
+        M(A, 'SetEncrypted', 'SetEncrypted(Key: Text, Value: Text [, Scope: DataScope])', 'Boolean');
+        M(A, 'Get', 'Get(Key: Text [, Scope: DataScope], var Value: Text)', 'Boolean');
+        M(A, 'Contains', 'Contains(Key: Text [, Scope: DataScope [, var IsSecret: Boolean]])', 'Boolean');
+        M(A, 'Delete', 'Delete(Key: Text [, Scope: DataScope])', 'Boolean');
+        exit(A);
     end;
 
     // One method row: n = insert text, s = display signature, r = result type ('' = void).

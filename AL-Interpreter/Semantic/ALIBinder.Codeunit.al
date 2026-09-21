@@ -2921,6 +2921,13 @@ codeunit 51119 "ALI Binder"
                     Names.Add('UTF16');             // 2
                     Names.Add('Windows');           // 3
                 end;
+            'DATASCOPE':
+                begin
+                    Names.Add('Module');            // 0
+                    Names.Add('Company');           // 1
+                    Names.Add('User');              // 2
+                    Names.Add('CompanyAndUser');    // 3
+                end;
             else
                 exit(false);
         end;
@@ -2936,6 +2943,18 @@ codeunit 51119 "ALI Binder"
         if ArgT <> "ALI TypeKind"::Option then
             exit(false);
         exit(TrySystemOptionSet('TEXTENCODING', EncSetId) and (SetId = EncSetId));
+    end;
+
+    // True when a bound expression is Option-typed over the built-in DataScope set — the only
+    // thing IsolatedStorage's scope parameter accepts. An Integer is deliberately NOT accepted:
+    // picking the wrong scope silently reads or writes a different key space.
+    local procedure IsDataScopeSet(ArgT: Integer; SetId: Integer): Boolean
+    var
+        ScopeSetId: Integer;
+    begin
+        if ArgT <> "ALI TypeKind"::Option then
+            exit(false);
+        exit(TrySystemOptionSet('DATASCOPE', ScopeSetId) and (SetId = ScopeSetId));
     end;
 
     // Resolve MemberText's ordinal within SetId and fold it onto Node, or report ALI986.
@@ -3851,9 +3870,32 @@ codeunit 51119 "ALI Binder"
                 "ALI TypeKind"::InStream, "ALI TypeKind"::OutStream:
                     if ArgT <> ParamT then
                         exit(false);
-                "ALI TypeKind"::Option:                 // the catalogue's only Option parameter is TextEncoding
-                    if not IsTextEncodingSet(ArgT, Ast.GetTypeArg(ArgNode)) then
-                        exit(false);
+                "ALI TypeKind"::Option:
+                    // Two Option parameters exist in the catalogue and they are NOT
+                    // interchangeable: TextEncoding (streams) and DataScope (isolated storage).
+                    // The row's own spec says which one this position is, so a script cannot pass
+                    // `TextEncoding::UTF8` where a DataScope belongs and have it silently mean
+                    // Company (ordinal 1).
+                    if Builtins.ParamCode(BId, k + Offset) = 'SCOPE' then begin
+                        if not IsDataScopeSet(ArgT, Ast.GetTypeArg(ArgNode)) then
+                            exit(false);
+                    end else
+                        if not IsTextEncodingSet(ArgT, Ast.GetTypeArg(ArgNode)) then
+                            exit(false);
+                "ALI TypeKind"::Text:
+                    // `TxtOrSec` rows (IsolatedStorage.Set / SetEncrypted) take a SecretText for
+                    // the VALUE. Text -> SecretText is implicit in native AL but SecretText ->
+                    // Text is not, so AssignmentCompatible alone would reject the secret
+                    // spelling, which is the one that matters for a stored credential. A `var`
+                    // Text parameter (IsolatedStorage.Get's out value) keeps the ordinary
+                    // both-ways rule: nothing is ever written back INTO a SecretText.
+                    if Builtins.IsVarParam(BId, k + Offset) then begin
+                        if not (TypeRules.AssignmentCompatible(ParamT, ArgT) and TypeRules.AssignmentCompatible(ArgT, ParamT)) then
+                            exit(false);
+                    end else
+                        if not (TypeRules.AssignmentCompatible(ParamT, ArgT) or
+                                ((ArgT = "ALI TypeKind"::SecretText) and (Builtins.ParamCode(BId, k + Offset) = 'TXTORSEC'))) then
+                            exit(false);
                 "ALI TypeKind"::List:                   // List of [Text]
                     if (ArgT <> "ALI TypeKind"::List) or (Ast.GetTypeArg(ArgNode) <> "ALI Register Class"::"Text".AsInteger()) then
                         exit(false);
@@ -4015,10 +4057,16 @@ codeunit 51119 "ALI Binder"
             141:                                            // ReportKeyword
                 exit(Builtins.ReportNativeId());
             20:                                             // IdentifierToken
-                if UpperCase(Tokens.GetIdentText(NMainTok.Get(RecvNode))) = 'FILE' then
-                    if Symbols.Lookup(Ast.GetExtra(RecvNode)) = 0 then
-                        if Builtins.IsNativeMethod(Builtins.FileNativeId(), UpperCase(Tokens.GetIdentText(NMainTok.Get(CalleeNode)))) then
-                            exit(Builtins.FileNativeId());
+                case UpperCase(Tokens.GetIdentText(NMainTok.Get(RecvNode))) of
+                    'FILE':
+                        if Symbols.Lookup(Ast.GetExtra(RecvNode)) = 0 then
+                            if Builtins.IsNativeMethod(Builtins.FileNativeId(), UpperCase(Tokens.GetIdentText(NMainTok.Get(CalleeNode)))) then
+                                exit(Builtins.FileNativeId());
+                    'ISOLATEDSTORAGE':
+                        if Symbols.Lookup(Ast.GetExtra(RecvNode)) = 0 then
+                            if Builtins.IsNativeMethod(Builtins.IsoStorageNativeId(), UpperCase(Tokens.GetIdentText(NMainTok.Get(CalleeNode)))) then
+                                exit(Builtins.IsoStorageNativeId());
+                end;
         end;
         exit(0);
     end;
@@ -4040,9 +4088,16 @@ codeunit 51119 "ALI Binder"
             ReceiverName := 'Page';
         if PseudoId = Builtins.ReportNativeId() then
             ReceiverName := 'Report';
+        if PseudoId = Builtins.IsoStorageNativeId() then
+            ReceiverName := 'IsolatedStorage';
 
         BId := Builtins.ResolveNative(PseudoId, UpperCase(MethodName));
         if BId = 0 then begin
+            if PseudoId = Builtins.IsoStorageNativeId() then begin
+                Diags.AddError('ALI961', StrSubstNo('''IsolatedStorage.%1'' is not a recognized method - the members are Set, SetEncrypted, Get, Contains and Delete', MethodName), TokPos(Tokens, NMainTok.Get(CalleeNode)), 0);
+                BindArgsSilently(Tokens, Ast, Symbols, Diags, Node, ArgCount);
+                exit("ALI TypeKind"::ErrorType);
+            end;
             Diags.AddError('ALI961', StrSubstNo('''%1.%2'' is not supported — the static members ALI runs are Page.Run(id [, Rec [, FieldNo]]) and Report.Run(id [, RequestWindow [, SystemPrinter [, Rec]]])', ReceiverName, MethodName), TokPos(Tokens, NMainTok.Get(CalleeNode)), 0);
             BindArgsSilently(Tokens, Ast, Symbols, Diags, Node, ArgCount);
             exit("ALI TypeKind"::ErrorType);

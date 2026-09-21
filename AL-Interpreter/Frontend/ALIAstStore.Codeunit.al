@@ -334,7 +334,13 @@ codeunit 51105 "ALI Ast Store"
     // ===== Lifecycle =====
 
     procedure Reset()
+    var
+        MyText: Text;
     begin
         ClearAll();
+        if IsolatedStorage.Contains('ALI Ast Store', datascope::Company) then
+            IsolatedStorage.Delete('ALI Ast Store', datascope::Company);
+        IsolatedStorage.Set('ALI Ast Store', 'test', datascope::Company);
+        IsolatedStorage.Get('ALI Ast Store', datascope::Company, MyText)
     end;
 }

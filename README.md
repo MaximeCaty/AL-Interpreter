@@ -135,7 +135,7 @@ Reference: [AL data types and methods](https://learn.microsoft.com/en-us/dynamic
 | Integer, BigInteger, Decimal, Boolean, Byte, Char | ✅ | char arithmetic, `s[i]` read/write |
 | Text / Text[n], Code[n], Label | ✅ | length enforced, Code upper-cased |
 | Option, Enum | ✅ | `Enum::X::Y`, `Format` |
-| System option types (`TextEncoding`, `IsolationLevel`, `SecurityFilter`, `ClientType`, `TransactionType`, `DataClassification`, `ErrorType`, `PageStyle`, `Verbosity`, `FieldClass`, `FieldType`) | ✅ | as values and variable types |
+| System option types (`TextEncoding`, `DataScope`, `IsolationLevel`, `SecurityFilter`, `ClientType`, `TransactionType`, `DataClassification`, `ErrorType`, `PageStyle`, `Verbosity`, `FieldClass`, `FieldType`) | ✅ | as values and variable types |
 | Date, Time, DateTime, Duration, DateFormula | ✅ | native arithmetic, `CalcDate`, `Evaluate` |
 | Guid | ✅ | |
 | Array (`array[N] of`) | ✅ | multidimensional, `ArrayLen` / `CopyArray` / `CompressArray` |
@@ -154,11 +154,14 @@ Reference: [AL data types and methods](https://learn.microsoft.com/en-us/dynamic
 | Table & tableextension procedures (`Rec.MyProc()`) | ✅ | object global variables included |
 | Event publishers / subscribers | ✅ | raising an event runs every active subscriber; the `IsHandled` pattern works |
 | Native codeunits (Type Helper, Base64 Convert, Math, Encoding, Environment Information, Language, Cryptography Management, Data Compression, Temp Blob, Regex) | ✅ | called natively (§4.10) |
+| IsolatedStorage | ✅ | `Set`, `SetEncrypted`, `Get`, `Contains`, `Delete`, all `DataScope` overloads. (refused in Simulation mode, §4.9) |
 | Media / MediaSet fields | 🔶 | read ✅, import / insert / remove ❌ |
 | ErrorInfo, File / FileUpload | 🔶 | |
 | DotNet | ❌ | procedures using DotNet are blocked; the rest of the object still works |
-| Page, Report, Query, XmlPort, Notification, TestPage variables | ❌ | static `Page.Run` / `Report.Run` ✅ |
-| IsolatedStorage, TaskScheduler, Session, NavApp, ModuleInfo, DataTransfer, FilterPageBuilder, NumberSequence, … | ❌ | |
+| Page, Report, XmlPort, Notification, TestPage variables | ❌ | static `Page.Run` / `Report.Run` ✅ |
+| Query | ❌ | a query's dataset (columns, joins) is not readable at runtime, and its source is unavailable to a cloud extension |
+| TaskScheduler, Session, NavApp, ModuleInfo, FilterPageBuilder, NumberSequence, … | ❌ | |
+| DataTransfer | ❌ | native AL allows it only in an upgrade codeunit, never at normal runtime |
 
 ### 4.2 Statements & language
 
@@ -239,9 +242,13 @@ All ✅ unless noted:
 
 | ✅ | 🔶 | ❌ |
 |---|---|---|
-| `Abs`, `Round`, `Power`, `Random`, `Randomize`, `Today`, `Time`, `CurrentDateTime`, `WorkDate`, `CalcDate`, `Date2DMY`, `Date2DWY`, `DMY2Date`, `DWY2Date`, `CreateDateTime`, `DT2Date`, `DT2Time`, `ClosingDate`, `NormalDate`, `RoundDateTime`, `Evaluate`, `Format`, `Clear`, `ClearAll`, `GetLastErrorText`, `ClearLastError`, `GetLastErrorCallStack`, `ArrayLen`, `CopyArray`, `CompressArray`, `Message`, `Error`, `Confirm`, `StrMenu`, `Sleep`, `GuiAllowed`, `CompanyName`, `UserId`, `UserSecurityId`, `SessionId`, `CreateGuid`, `IsNullGuid`, `GetUrl`, `GlobalLanguage`, `WindowsLanguage`, `SelectLatestVersion`, `CurrentClientType`, `CurrentExecutionMode`, `CopyStream`, `Variant2Date`, `Variant2Time`, `DaTi2Variant`, `Codeunit.Run`, `Page.Run`, `Report.Run`, `DownloadFromStream`, `UploadIntoStream`, `Database::` / `Codeunit::` / `Enum::` ids | `CurrReport`, `CurrPage`, `CurrFieldNo`, `Hyperlink`, `LogMessage`, `FeatureTelemetry`, `Download`, `Upload`, `FileExists`, `ErrorInfo` | Encryption functions, error-collection functions, `IsNull`, `GetDotNetType`, `ApplicationPath`, `TemporaryPath`, `CaptionClassTranslate`, `GetDocumentUrl` |
+| `Abs`, `Round`, `Power`, `Random`, `Randomize`, `Today`, `Time`, `CurrentDateTime`, `WorkDate`, `CalcDate`, `Date2DMY`, `Date2DWY`, `DMY2Date`, `DWY2Date`, `CreateDateTime`, `DT2Date`, `DT2Time`, `ClosingDate`, `NormalDate`, `RoundDateTime`, `Evaluate`, `Format`, `Clear`, `ClearAll`, `GetLastErrorText`, `ClearLastError`, `GetLastErrorCallStack`, `ArrayLen`, `CopyArray`, `CompressArray`, `Message`, `Error`, `Confirm`, `StrMenu`, `Sleep`, `GuiAllowed`, `CompanyName`, `UserId`, `UserSecurityId`, `SessionId`, `CreateGuid`, `IsNullGuid`, `GetUrl`, `GlobalLanguage`, `WindowsLanguage`, `SelectLatestVersion`, `CurrentClientType`, `CurrentExecutionMode`, `CopyStream`, `Variant2Date`, `Variant2Time`, `DaTi2Variant`, `Codeunit.Run`, `Page.Run`, `Report.Run`, `DownloadFromStream`, `UploadIntoStream`, `IsolatedStorage.*`, `Database::` / `Codeunit::` / `Enum::` ids | `CurrReport`, `CurrPage`, `CurrFieldNo`, `Hyperlink`, `LogMessage`, `FeatureTelemetry`, `Download`, `Upload`, `FileExists`, `ErrorInfo` | Encryption functions, error-collection functions, `IsNull`, `GetDotNetType`, `ApplicationPath`, `TemporaryPath`, `CaptionClassTranslate`, `GetDocumentUrl` |
 
 `Message` / `Error` are captured in the run result; `Confirm` / `StrMenu` answers can be scripted.
+
+**IsolatedStorage** — `Set`, `SetEncrypted`, `Get`, `Contains`, `Delete`, each with and without a `DataScope` (`Module`, `Company`, `User`, `CompanyAndUser`). `Set` / `SetEncrypted` take a `SecretText` as well as a `Text`, and `Contains` supports the `Contains(Key, DataScope, var IsSecret)` overload.
+
+> ⚠️ In **Simulation mode** the three writing methods (`Set`, `SetEncrypted`, `Delete`) raise a runtime error instead of running: isolated storage is written outside the record transaction ALI rolls back, so the change would survive a run that is supposed to leave no trace. Reads stay available. Run in *Normal* mode to write.
 
 </details>
 
@@ -312,7 +319,7 @@ end;
 
 | Setter | Values |
 |---|---|
-| `SetMode` | **Normal**: writes persist · `Simulation`: every write rolled back, `COMMIT` ignored |
+| `SetMode` | **Normal**: writes persist · `Simulation`: every write rolled back, `COMMIT` ignored, `IsolatedStorage` writes refused |
 | `SetMessageMode` | **Log**: `Message()` collected in `Result` · `Show`: collected and displayed |
 | `SetDialogMode` | **Show**: real `GuiAllowed` · `Hide`: `GuiAllowed = false`, dialogs skipped |
 | `SetInteractionMode` | **Default**: scripted answer, else `false` / `0` + warning · `Error`: unscripted = runtime error · `Show`: real dialog |

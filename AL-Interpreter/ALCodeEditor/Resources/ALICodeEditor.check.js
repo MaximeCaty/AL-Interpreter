@@ -99,6 +99,47 @@ pool = ALICodeEditor_suggestPool(at(cuHead + 'Api.|'));
 assert.deepStrictEqual(pool.map(i => i.l), ['BuildCatalogJson()']);
 assert.strictEqual(pool[0].t, 'BuildCatalogJson');
 
+// --- static pseudo-receivers: `IsolatedStorage.` completes without any declaration ---
+ALICodeEditor_catalog.methods.IsolatedStorage = [
+    { n: 'Get', s: 'Get(Key: Text [, Scope: DataScope], var Value: Text)', r: 'Boolean' },
+    { n: 'Contains', s: 'Contains(Key: Text [, Scope: DataScope [, var IsSecret: Boolean]])', r: 'Boolean' }];
+pool = ALICodeEditor_suggestPool(at(head + 'IsolatedStorage.|'));
+assert.deepStrictEqual(pool.map(i => i.t), ['Get', 'Contains']);      // insert name, not signature
+assert.strictEqual(pool[0].k, 'm');
+assert.strictEqual(pool[1].l, 'Contains(Key: Text [, Scope: DataScope [, var IsSecret: Boolean]])');
+assert.strictEqual(ALICodeEditor_suggestPool(at(head + 'isolatedstorage.|')).length, 2);  // AL is case-insensitive
+assert.strictEqual(ALICodeEditor_suggestPool(at(head + 'IsolatedStorage.SetRange(|')).length, 0); // not a field receiver
+assert.strictEqual(ALICodeEditor_suggestPool(at(head + 'NotAReceiver.|')).length, 0);
+// a real declaration of the same name still wins over the static list
+assert.strictEqual(ALICodeEditor_suggestPool(
+    at('var\n  IsolatedStorage: Integer;\nbegin\n  IsolatedStorage.|')).length, 0);
+
+// the receiver NAME itself completes on a bare word, before any dot is typed
+c = at(head + 'Isolat|');
+assert.strictEqual(c.mode, 'proc');
+pool = ALICodeEditor_suggestPool(c);
+assert.ok(pool.some(i => i.l === 'IsolatedStorage' && i.t === 'IsolatedStorage'));
+assert.strictEqual(pool.find(i => i.l === 'IsolatedStorage').k, 'c');
+// listed once, not twice, when a variable of the same name is declared
+pool = ALICodeEditor_suggestPool(at('var\n  IsolatedStorage: Integer;\nbegin\n  Isolat|'));
+assert.strictEqual(pool.filter(i => i.l === 'IsolatedStorage').length, 1);
+assert.strictEqual(pool.find(i => i.l === 'IsolatedStorage').k, 'v');   // the declaration's row
+
+// --- `DataScope::` and the other built-in system option sets complete from the catalog ---
+ALICodeEditor_catalog.optionsets = {
+    DataScope: [{ n: 'Module', v: 0 }, { n: 'Company', v: 1 }, { n: 'User', v: 2 }, { n: 'CompanyAndUser', v: 3 }]
+};
+c = at(head + 'IsolatedStorage.Get(\'k\', DataScope::|');
+assert.strictEqual(c.mode, 'optmember'); assert.strictEqual(c.receiver, 'DataScope');
+pool = ALICodeEditor_suggestPool(c);
+assert.deepStrictEqual(pool.map(i => i.l), ['Module', 'Company', 'User', 'CompanyAndUser']);
+assert.strictEqual(pool[1].d, '1');                                   // detail shows the ordinal
+assert.strictEqual(ALICodeEditor_suggestPool(at(head + 'x := datascope::|')).length, 4);  // case-insensitive
+assert.strictEqual(ALICodeEditor_suggestPool(at(head + 'x := NoSuchSet::|')).length, 0);
+// a local Option variable of the same name shadows the built-in set
+assert.deepStrictEqual(ALICodeEditor_suggestPool(
+    at('var\n  DataScope: Option A,B;\nbegin\n  x := DataScope::|')).map(i => i.l), ['A', 'B']);
+
 // --- a declaration whose TYPE is a keyword must not end the enclosing var block ---
 // (`Codeunit` is both; before the fix the next line in the same block lost completion)
 const shell = 'codeunit 50100 MyScript\n{\n  var\n    Api: Codeunit "ALI Api Catalog";\n    ';

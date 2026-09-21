@@ -189,6 +189,12 @@ function ALICodeEditor_suggestPool(ctx) {
         } else {
             ALICodeEditor_PROCS.forEach(function (p) { items.push({ t: p, l: p, d: '', k: 'm' }); });
         }
+        // Static pseudo-receivers (`IsolatedStorage`) are names a script types on their own, not
+        // declarations and not free functions, so neither loop above offers them. A variable of
+        // the same name already pushed its own row — skip ours rather than list the name twice.
+        ALICodeEditor_STATIC_RECEIVERS.forEach(function (n) {
+            if (!decls[n.toUpperCase()]) items.push({ t: n, l: n, d: '', k: 'c' });
+        });
         return items;
     }
     if (ctx.mode === 'optmember') {
@@ -204,6 +210,15 @@ function ALICodeEditor_suggestPool(ctx) {
         if (od && od.options) od.options.forEach(function (o, ord) {
             if (o) items.push({ t: ALICodeEditor_alQuote(o), l: o, d: String(ord), k: 'e' });
         });
+        // `DataScope::` / `TextEncoding::` / … — a built-in system option set, named directly
+        // rather than through a variable. Checked only when no local declaration claimed the
+        // name, so a script's own `DataScope: Option ...` still shadows it.
+        if (!od) {
+            var sys = ALICodeEditor_systemOptionSet(ctx.receiver);
+            if (sys) sys.forEach(function (o) {
+                items.push({ t: ALICodeEditor_alQuote(o.n), l: o.n, d: String(o.v), k: 'e' });
+            });
+        }
         return items;
     }
     if (ctx.mode === 'table' || ctx.mode === 'codeunit' || ctx.mode === 'enum') {
@@ -216,6 +231,17 @@ function ALICodeEditor_suggestPool(ctx) {
     }
     if (ctx.mode === 'field' || ctx.mode === 'member') {
         var decl = ALICodeEditor_scanDeclarations()[ctx.receiver.toUpperCase()];
+        // Static pseudo-receiver (`IsolatedStorage.`): a NAME, not a declared variable, so the
+        // declaration scan finds nothing. Only in 'member' mode — `IsolatedStorage.SetRange(`
+        // is not a thing, so 'field' must keep returning nothing. A real declaration of the same
+        // name wins, which keeps a script that declares `IsolatedStorage: Text` honest.
+        if (!decl && ctx.mode === 'member') {
+            var statics = ALICodeEditor_staticMethodsOf(ctx.receiver);
+            if (statics) statics.forEach(function (sm) {
+                items.push({ t: sm.n, l: sm.s || sm.n, d: sm.r || '', k: 'm' });
+            });
+            return items;
+        }
         if (!decl) return items;
         ALICodeEditor_pushFieldItems(items, decl);
         if (ctx.mode === 'field') return items; // only fields belong in `SetRange(...)`

@@ -11,12 +11,7 @@
   "url": "https://github.com/MaximeCaty/AL-Company-Data-Import-Export",
   "logo": "",
   "dependencies": [
-    {  
-      "id": "dd0be2ea-f733-4d65-bb34-a28f4624fb14",
-      "name": "Library Assert",
-      "version": "27.0.0.0",
-      "publisher": "Microsoft"
-    }
+
   ],
   "screenshots": [],
   "platform": "27.0.0.0",
@@ -37,8 +32,8 @@
     "NoImplicitWith",
     "TranslationFile"
   ],
-  "target": "Cloud",
+  "target": "OnPrem",
   "preprocessorSymbols": [
-    "CLOUD"
+    "ONPREM"
   ]
 }

@@ -39,6 +39,7 @@ codeunit 51124 "ALI Native Runtime"
         ListRt: Codeunit "ALI List Runtime";
         MathCU: Codeunit Math;
         RecRt: Codeunit "ALI Rec Runtime";
+        RunOptions: Codeunit "ALI Run Options";
         StrmRt: Codeunit "ALI Stream Runtime";
         TypeHelper: Codeunit "Type Helper";
         DataComp: array[16] of Codeunit "Data Compression";
@@ -125,6 +126,7 @@ codeunit 51124 "ALI Native Runtime"
         TempMatches: Record Matches;
         TempRegexOptions: Record "Regex Options";
         TempWinLanguage: Record "Windows Language" temporary;
+        IsSecret: Boolean;
         Dur: Duration;
         InS: InStream;
         SigInS: InStream;
@@ -890,9 +892,104 @@ codeunit 51124 "ALI Native Runtime"
                     Args[4] := T;
                     StrmRt.AttachIn(IntOf(Args[5]), InS);
                 end;
+
+            // --- `IsolatedStorage.*` (pseudo codeunit id). Reads are always allowed; every
+            // WRITE is refused in Simulation mode by CheckIsoStorageWritable — isolated storage
+            // is not part of the record transaction ALI rolls back at the end of a simulated
+            // run, so the write would outlive the run that was promised to leave no trace. ---
+            'ISO.SET(TXT,TXTORSEC)':
+                begin
+                    CheckIsoStorageWritable('Set');
+                    ResultV := IsolatedStorage.Set(TxtOf(Args[1]), TxtOf(Args[2]));
+                end;
+            'ISO.SET(TXT,TXTORSEC,SCOPE)':
+                begin
+                    CheckIsoStorageWritable('Set');
+                    ResultV := IsolatedStorage.Set(TxtOf(Args[1]), TxtOf(Args[2]), ScopeOf(Args[3]));
+                end;
+            'ISO.SETENCRYPTED(TXT,TXTORSEC)':
+                begin
+                    CheckIsoStorageWritable('SetEncrypted');
+                    SecKey := TxtOf(Args[2]);
+                    ResultV := IsolatedStorage.SetEncrypted(TxtOf(Args[1]), SecKey);
+                end;
+            'ISO.SETENCRYPTED(TXT,TXTORSEC,SCOPE)':
+                begin
+                    CheckIsoStorageWritable('SetEncrypted');
+                    SecKey := TxtOf(Args[2]);
+                    ResultV := IsolatedStorage.SetEncrypted(TxtOf(Args[1]), SecKey, ScopeOf(Args[3]));
+                end;
+            'ISO.GET(TXT,&TXT)':
+                begin
+                    T := Args[2];
+                    ResultV := IsolatedStorage.Get(TxtOf(Args[1]), T);
+                    Args[2] := T;
+                end;
+            'ISO.GET(TXT,SCOPE,&TXT)':
+                begin
+                    T := Args[3];
+                    ResultV := IsolatedStorage.Get(TxtOf(Args[1]), ScopeOf(Args[2]), T);
+                    Args[3] := T;
+                end;
+            'ISO.CONTAINS(TXT)':
+                ResultV := IsolatedStorage.Contains(TxtOf(Args[1]));
+            'ISO.CONTAINS(TXT,SCOPE)':
+                ResultV := IsolatedStorage.Contains(TxtOf(Args[1]), ScopeOf(Args[2]));
+            // No `Contains(Key, var IsSecret)` arm: the platform pairs the out-flag with a scope
+            // only, so the two-argument form is always `Contains(Key, Scope)`.
+            'ISO.CONTAINS(TXT,SCOPE,&BOOL)':
+                begin
+                    IsSecret := BoolOf(Args[3]);
+                    ResultV := IsolatedStorage.Contains(TxtOf(Args[1]), ScopeOf(Args[2]), IsSecret);
+                    Args[3] := IsSecret;
+                end;
+            'ISO.DELETE(TXT)':
+                begin
+                    CheckIsoStorageWritable('Delete');
+                    ResultV := IsolatedStorage.Delete(TxtOf(Args[1]));
+                end;
+            'ISO.DELETE(TXT,SCOPE)':
+                begin
+                    CheckIsoStorageWritable('Delete');
+                    ResultV := IsolatedStorage.Delete(TxtOf(Args[1]), ScopeOf(Args[2]));
+                end;
             else
                 Error('ALI980: ''%1'' is not a catalogued native procedure', DispatchKey);
         end;
+    end;
+
+    // ===== IsolatedStorage =====
+
+    // Isolated storage is NOT part of the record transaction ALI rolls back when a run finishes
+    // in Simulation mode: the platform writes it through its own store, and no rollback ALI can
+    // perform will undo it. Allowing the write would silently break the one promise Simulation
+    // mode makes, so the run stops here instead, saying which method was refused and why.
+    // Reads (Get / Contains) are untouched — they change nothing.
+    local procedure CheckIsoStorageWritable(MethodName: Text)
+    begin
+        if RunOptions.IsSimulation() then
+            Error('ALI983: IsolatedStorage.%1 is not allowed in Simulation mode — isolated storage is written outside the record transaction, so the change would NOT be rolled back at the end of the run. Switch the execution mode to Normal to write isolated storage.', MethodName);
+    end;
+
+    // The script's DataScope ordinal ("ALI Binder".TrySystemOptionSet, 0..3) as the platform
+    // enum. The binder only ever folds a member of that set, so the else arm is unreachable for
+    // bound code and exists to keep a hand-built bytecode honest.
+    local procedure ScopeOf(V: Variant): DataScope
+    var
+        Ord: Integer;
+    begin
+        Ord := IntOf(V);
+        case Ord of
+            0:
+                exit(DataScope::Module);
+            1:
+                exit(DataScope::Company);
+            2:
+                exit(DataScope::User);
+            3:
+                exit(DataScope::CompanyAndUser);
+        end;
+        Error('ALI980: %1 is not a DataScope ordinal', Ord);
     end;
 
     // ===== Record / List argument bridges =====

@@ -198,7 +198,7 @@ end;
 | Value | Default | Behavior |
 |---|---|---|
 | `Normal` (0) | ✔ | Writes persist. Script `COMMIT` is real. A runtime error rolls back to the run start (or the last script `COMMIT`). |
-| `Simulation` (1) | | Every DB write is rolled back at the end, even on success. `COMMIT` is ignored (in the script and in called objects). |
+| `Simulation` (1) | | Every DB write is rolled back at the end, even on success. `COMMIT` is ignored (in the script and in called objects). `IsolatedStorage.Set` / `SetEncrypted` / `Delete` raise a runtime error, because isolated storage is written outside that transaction and would survive the rollback. |
 
 > ⚠️ In both modes the **caller's pending writes are committed** just before the run starts. Do not call ALI in the middle of a transaction you may need to roll back.
 

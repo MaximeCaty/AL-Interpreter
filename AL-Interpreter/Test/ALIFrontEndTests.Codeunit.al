@@ -1118,6 +1118,53 @@ codeunit 51128 "ALI Front End Tests"
         end;
     end;
 
+    // The editor completes `IsolatedStorage.` from the catalog's methods map and `DataScope::`
+    // from its optionsets map — both must be present, and the option members must stay in
+    // ordinal order (the editor shows `v` as the member's value).
+    [Test]
+    procedure T07_StaticReceiverAndOptionSetsArePublished()
+    var
+        Root: JsonObject;
+        MemberTok: JsonToken;
+        NameTok: JsonToken;
+        Tok: JsonToken;
+        i: Integer;
+        Names: Text;
+    begin
+        Root.ReadFrom(ApiCatalog.BuildCatalogJson());
+        Root.Get('methods', Tok);
+        Assert.IsTrue(Tok.AsObject().Contains('IsolatedStorage'), 'methods covers the IsolatedStorage static receiver');
+        Tok.AsObject().Get('IsolatedStorage', Tok);
+        for i := 0 to Tok.AsArray().Count() - 1 do begin
+            Tok.AsArray().Get(i, MemberTok);
+            MemberTok.AsObject().Get('n', NameTok);
+            Names += NameTok.AsValue().AsText() + ',';
+        end;
+        Assert.AreEqual('Set,SetEncrypted,Get,Contains,Delete,', Names, 'every IsolatedStorage member is offered');
+
+        Root.Get('optionsets', Tok);
+        Assert.IsTrue(Tok.AsObject().Contains('DataScope'), 'optionsets covers DataScope');
+        Assert.IsTrue(Tok.AsObject().Contains('TextEncoding'), 'optionsets covers TextEncoding');
+        Tok.AsObject().Get('DataScope', Tok);
+        Assert.AreEqual(4, Tok.AsArray().Count(), 'DataScope has four members');
+        Tok.AsArray().Get(1, MemberTok);
+        MemberTok.AsObject().Get('n', NameTok);
+        Assert.AreEqual('Company', NameTok.AsValue().AsText(), 'members are in ordinal order');
+        MemberTok.AsObject().Get('v', NameTok);
+        Assert.AreEqual(1, NameTok.AsValue().AsInteger(), 'the ordinal rides along as v');
+    end;
+
+    // Drift guard for the published option sets: each member name must actually bind through
+    // `::` in a script, so a rename in "ALI Binder".TrySystemOptionSet breaks loudly here.
+    [Test]
+    procedure T08_PublishedOptionSetMembersBind()
+    var
+        Diags: Codeunit "ALI Diag Bag";
+    begin
+        Assert.IsTrue(Pipeline.CompileExpectingErrors('procedure P(): Boolean begin exit(IsolatedStorage.Contains(''k'', DataScope::CompanyAndUser)); end;', Diags), 'DataScope members bind');
+        Assert.IsTrue(Pipeline.CompileExpectingErrors('var c: Record "ALI Stored Script"; procedure P() begin c.ReadIsolation(IsolationLevel::UpdLock); end;', Diags), 'IsolationLevel members bind');
+    end;
+
     // ================================================================================================
     // ALI Diagnostics for LLM hosts — "did you mean", no cascade after an unknown callee, hint
     // dedupe, hidden codes, ALI1004 FlowField warning, runtime index hint.

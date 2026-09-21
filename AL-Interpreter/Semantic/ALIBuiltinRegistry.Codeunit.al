@@ -222,6 +222,31 @@ codeunit 51120 "ALI Builtin Registry"
         exit(PParamType.Get(PFirstByBId.Get(BId) + Idx - 1));
     end;
 
+    // The catalogue SPEC code of native row BId's parameter Idx ('TXT', 'SCOPE', 'TXTORSEC', ...,
+    // with any leading '&' kept off). Two different parameters can share one TypeKind — Option is
+    // both TextEncoding and DataScope, Text is both a plain Text and the SecretText-accepting
+    // 'TxtOrSec' — and only the spec says which one a POSITION is. Parsed from the row key
+    // (TAG.METHOD(SPEC)) rather than stored in a parallel column: it is read once per argument
+    // during overload checking, never on a hot path.
+    procedure ParamCode(BId: Integer; Idx: Integer): Text
+    var
+        Codes: List of [Text];
+        KeyTxt: Text;
+        Spec: Text;
+    begin
+        KeyTxt := BNameUpper.Get(BId);
+        if StrPos(KeyTxt, '(') = 0 then
+            exit('');
+        Spec := CopyStr(KeyTxt, StrPos(KeyTxt, '(') + 1);
+        Spec := CopyStr(Spec, 1, StrLen(Spec) - 1);     // drop the trailing ')'
+        if Spec = '' then
+            exit('');
+        Codes := Spec.Split(',');
+        if (Idx < 1) or (Idx > Codes.Count()) then
+            exit('');
+        exit(DelChr(Codes.Get(Idx), '<', '&'));
+    end;
+
     // ===== Native codeunit catalogue =====
 
     // First catalogued overload of CodeunitId.UpperMethod, or 0 when the method is not on the
@@ -236,10 +261,10 @@ codeunit 51120 "ALI Builtin Registry"
         exit(0);
     end;
 
-    // Pseudo codeunit ids of the STATIC receivers `File.` / `Page.` / `Report.`. Their members
-    // are platform methods, not procedures of a codeunit, but they bind and run exactly like the
-    // stateless catalogue (a receiver with no value, one row per overload), so they live in the
-    // same NativeFirst map under an id no real codeunit can have.
+    // Pseudo codeunit ids of the STATIC receivers `File.` / `Page.` / `Report.` /
+    // `IsolatedStorage.`. Their members are platform methods, not procedures of a codeunit, but
+    // they bind and run exactly like the stateless catalogue (a receiver with no value, one row
+    // per overload), so they live in the same NativeFirst map under an id no real codeunit can have.
     procedure FileNativeId(): Integer
     begin
         exit(-1);
@@ -253,6 +278,11 @@ codeunit 51120 "ALI Builtin Registry"
     procedure ReportNativeId(): Integer
     begin
         exit(-3);
+    end;
+
+    procedure IsoStorageNativeId(): Integer
+    begin
+        exit(-4);
     end;
 
     procedure IsNativeMethod(CodeunitId: Integer; UpperMethod: Text): Boolean
@@ -1000,6 +1030,36 @@ codeunit 51120 "ALI Builtin Registry"
         Nat(FileNativeId(), 'FILE', 'DownloadFromStream', "ALI TypeKind"::Boolean, 'InS,Txt,Txt,Txt,&Txt');
         Nat(FileNativeId(), 'FILE', 'UploadIntoStream', "ALI TypeKind"::Boolean, 'Txt,InS');
         Nat(FileNativeId(), 'FILE', 'UploadIntoStream', "ALI TypeKind"::Boolean, 'Txt,Txt,Txt,&Txt,InS');
+
+        // --- `IsolatedStorage.*` (pseudo codeunit id). Same stateless static shape as `File.`:
+        // no instance, one row per documented overload. The DataScope argument is an ordinary
+        // Option over the built-in DataScope set ("ALI Binder".TrySystemOptionSet), so it reaches
+        // the platform as its ordinal and is case-mapped back to the real `DataScope` enum by
+        // "ALI Native Runtime".ScopeOf — a script cannot name a scope that does not exist.
+        //
+        // Every WRITE row (Set / SetEncrypted / Delete) is refused in Simulation mode at RUN time
+        // (CheckIsoStorageWritable), not here: isolated storage lives outside the record
+        // transaction ALI rolls back, so a simulated write would survive the rollback and the
+        // "nothing persists" contract of Simulation mode would be a lie. Reads stay allowed.
+        //
+        // The Text value of Set/SetEncrypted takes a SecretText too ('TxtOrSec'): native AL has
+        // that overload, and ALI's SecretText already rides in the Text register file — only the
+        // one-way Text -> SecretText bind rule had to be relaxed for these rows, which
+        // BindNativeCall does by accepting either side of the pair.
+        Nat(IsoStorageNativeId(), 'ISO', 'Set', "ALI TypeKind"::Boolean, 'Txt,TxtOrSec');
+        Nat(IsoStorageNativeId(), 'ISO', 'Set', "ALI TypeKind"::Boolean, 'Txt,TxtOrSec,Scope');
+        Nat(IsoStorageNativeId(), 'ISO', 'SetEncrypted', "ALI TypeKind"::Boolean, 'Txt,TxtOrSec');
+        Nat(IsoStorageNativeId(), 'ISO', 'SetEncrypted', "ALI TypeKind"::Boolean, 'Txt,TxtOrSec,Scope');
+        Nat(IsoStorageNativeId(), 'ISO', 'Get', "ALI TypeKind"::Boolean, 'Txt,&Txt');
+        Nat(IsoStorageNativeId(), 'ISO', 'Get', "ALI TypeKind"::Boolean, 'Txt,Scope,&Txt');
+        Nat(IsoStorageNativeId(), 'ISO', 'Contains', "ALI TypeKind"::Boolean, 'Txt');
+        Nat(IsoStorageNativeId(), 'ISO', 'Contains', "ALI TypeKind"::Boolean, 'Txt,Scope');
+        // `var IsSecret` tells the caller whether the stored value was written encrypted. The
+        // platform offers it ONLY together with a scope: there is no Contains(Key, var IsSecret)
+        // overload, so a two-argument call binds as Contains(Key, Scope) or not at all.
+        Nat(IsoStorageNativeId(), 'ISO', 'Contains', "ALI TypeKind"::Boolean, 'Txt,Scope,&Bool');
+        Nat(IsoStorageNativeId(), 'ISO', 'Delete', "ALI TypeKind"::Boolean, 'Txt');
+        Nat(IsoStorageNativeId(), 'ISO', 'Delete', "ALI TypeKind"::Boolean, 'Txt,Scope');
     end;
 
     // A native overload the catalogue KNOWS but this build cannot call: the underlying method's
@@ -1078,6 +1138,10 @@ codeunit 51120 "ALI Builtin Registry"
                 exit("ALI TypeKind"::Guid);
             'Enc':
                 exit("ALI TypeKind"::Option);           // TextEncoding — the binder checks the set
+            'Scope':
+                exit("ALI TypeKind"::Option);           // DataScope — the binder checks the set
+            'TxtOrSec':
+                exit("ALI TypeKind"::Text);             // Text or SecretText — see BindNativeCall
             'InS':
                 exit("ALI TypeKind"::InStream);
             'OutS':

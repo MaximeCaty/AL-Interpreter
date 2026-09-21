@@ -44,6 +44,11 @@ var ALICodeEditor_PROCS = [
     'SecretStrSubstNo', 'ClientType', 'CurrentClientType', 'CurrentExecutionMode'
 ];
 
+// Receiver names that are STATIC pseudo-objects rather than variables — `IsolatedStorage.Get(…)`
+// needs no declaration. The names double as the catalog's `methods` keys; anything listed here
+// must have a matching entry in "ALI Api Catalog".BuildMethodsObject.
+var ALICodeEditor_STATIC_RECEIVERS = ['IsolatedStorage'];
+
 // Record methods that take a field as their FIRST argument only (rec.SetRange(Field, ...)).
 var ALICodeEditor_FIELD_ARG1 = {};
 ('SETRANGE SETFILTER GETFILTER GETRANGEMIN GETRANGEMAX MODIFYALL VALIDATE TESTFIELD FIELDERROR ' +
@@ -193,6 +198,30 @@ function ALICodeEditor_methodsOf(typeName) {
     if (!ALICodeEditor_catalog || !ALICodeEditor_catalog.methods) return null;
     if (typeName === 'Label') typeName = 'Text';
     return ALICodeEditor_catalog.methods[typeName] || null;
+}
+
+// The catalog's method rows for a STATIC pseudo-receiver named in the script (`IsolatedStorage`),
+// or null when the name is not one. AL is case-insensitive, so the catalog key is matched that
+// way — the script may type `isolatedstorage.` and still get the list.
+function ALICodeEditor_staticMethodsOf(name) {
+    if (!ALICodeEditor_catalog || !ALICodeEditor_catalog.methods) return null;
+    var want = String(name).toUpperCase();
+    var keys = ALICodeEditor_STATIC_RECEIVERS;
+    for (var i = 0; i < keys.length; i++)
+        if (keys[i].toUpperCase() === want) return ALICodeEditor_catalog.methods[keys[i]] || null;
+    return null;
+}
+
+// Members of a built-in system option set (`DataScope`, `TextEncoding`, …) as [{n, v}], or null
+// when the name is not one. Case-insensitive for the same reason as above.
+function ALICodeEditor_systemOptionSet(name) {
+    var sets = ALICodeEditor_catalog && ALICodeEditor_catalog.optionsets;
+    if (!sets) return null;
+    var want = String(name).toUpperCase();
+    var keys = Object.keys(sets);
+    for (var i = 0; i < keys.length; i++)
+        if (keys[i].toUpperCase() === want) return sets[keys[i]];
+    return null;
 }
 
 // Cached members of an object ('Table' → fields + procedures, 'Codeunit' → procedures), or
