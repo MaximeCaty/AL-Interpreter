@@ -1,4 +1,4 @@
-# AL Interpreter for Business Central (ALI)
+# AL Interpreter for Business Central
 
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE.md)
 [![Latest release](https://img.shields.io/github/v/release/MaximeCaty/AL-Interpreter?label=release)](https://github.com/MaximeCaty/AL-Interpreter/releases)
@@ -16,7 +16,7 @@ No VS Code, no container, no publish cycle — type code, press **F5**, read the
 
 Typical uses: one-off **data fixes**, **investigation** of a live environment, trying an **AL concept** without a dev setup, and a **sandbox for AI-generated AL**.
 
-> ⚠️ ALI runs **~10× slower than compiled AL** on pure logic (database work is native speed). It is a tool for scripts, fixes and investigation — not a replacement for extensions. See [Performance](#3-performance).
+> ⚠️ runs **~10× slower than compiled AL** on pure logic (database work is native speed). It is a tool for scripts, fixes and investigation — not a replacement for extensions. See [Performance](#3-performance).
 
 ## Install
 
